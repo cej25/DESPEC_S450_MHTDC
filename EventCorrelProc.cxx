@@ -768,7 +768,7 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
 
      for(int i=0; i<MAX_FRS_GATE; i++){
 
-         cout << "Inside single gate loop: " << gate << endl;
+         cout << "Inside single gate loop: " << i << endl;
 
          hA_FRS_ZAoQ_GeE[i]  = MakeTH1('F', Form("Correlations/FRS-Prompt_Ge/Z1vsAoQ_Ge/SinglesEnergy/Ge_EnergySum_Z1vsAoQ_Gate%d", i), Form("Germanium Energy FRS PID gated %d", i), 2000, 0, 2000, "Energy/keV");
 
