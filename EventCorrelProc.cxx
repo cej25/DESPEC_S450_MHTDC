@@ -36,7 +36,7 @@
 
 #include "TAidaConfiguration.h"
 
-
+using namespace std;
 
 //-----------------------------------------------------------
 EventCorrelProc::EventCorrelProc() :
