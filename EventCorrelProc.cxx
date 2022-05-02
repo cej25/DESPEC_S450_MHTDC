@@ -811,13 +811,13 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
      // C.E.J.
      // --- MHTDC Histograms --- //
 
-     for (int i; i<10; i++) {
+     for (int i=0; i<10; i++) {
 
          hA_FRS_ZAoQ_GeEvsT_all_mhtdc[i] = MakeTH2('D',"Correlations/MHTDC/FRS-Prompt_Ge/Z1vsAoQ_Ge/GeE_vs_FRSGe_dT_Z1vsAoQ_mhtdc_All","Ge (mhtdc) vs T all",2100,-1000,20000,fCorrel->GGe1_Ge2_HistoBin,fCorrel->GGe1_Ge2_HistoMin,fCorrel->GGe1_Ge2_HistoMax,"Ge Energy (keV) (mhtdc)", "FRS - Ge time (ns)");
 
          cout << "Just outside MHTDC gate loop: " << i << endl;
 
-         for (int gate; gate<MAX_FRS_GATE; gate++) {
+         for (int gate=0; gate<MAX_FRS_GATE; gate++) {
 
              cout << "Inside MHTDC gate loop: " << gate << endl;
 
