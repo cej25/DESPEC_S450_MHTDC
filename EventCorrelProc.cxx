@@ -813,9 +813,10 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
 
          hA_FRS_ZAoQ_GeEvsT_all_mhtdc[i] = MakeTH2('D',"Correlations/MHTDC/FRS-Prompt_Ge/Z1vsAoQ_Ge/GeE_vs_FRSGe_dT_Z1vsAoQ_mhtdc_All","Ge (mhtdc) vs T all",2100,-1000,20000,fCorrel->GGe1_Ge2_HistoBin,fCorrel->GGe1_Ge2_HistoMin,fCorrel->GGe1_Ge2_HistoMax,"Ge Energy (keV) (mhtdc)", "FRS - Ge time (ns)");
 
-         cout<<"MAX_FRS_GATE" << MAX_FRS_GATE <<endl;
-
          for (int gate; gate<MAX_FRS_GATE; gate++) {
+
+             cout << "Inside gate loop " << endl;
+
              hA_FRS_ZAoQ_GeE_mhtdc[i][gate]  = MakeTH1('F', Form("Correlations/MHTDC/FRS-Prompt_Ge/Z1vsAoQ_Ge/SinglesEnergy/Ge_EnergySum_Z1vsAoQ_mhtdc_Gate%d", gate), Form("Germanium Energy FRS PID Gated (mhtdc)%d", gate), 2000, 0, 2000, "Energy/keV");
 
              if(fCorrel->GSetup_corr_FRS_Gamma_Gamma==1){
