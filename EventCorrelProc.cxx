@@ -906,6 +906,8 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
 
                  hA_FRS_ZAoQ_GeEvsT_all->Fill((cInputMain->pGe_T_Aligned[g][h] - cInputMain->pGe_T_Aligned[Germanium_SC41_Det][Germanium_SC41L_Crystal_Digi]),cInputMain->pGe_EAddback[g][h]);
 
+                 cout << "Detector # " << g << " Crystal # " << h << " pGe_T_Aligned: " << cInputMain->pGe_T_Aligned[g][h] - cInputMain->pGe_T_Aligned[Germanium_SC41_Det][Germanium_SC41L_Crystal_Digi] << endl;
+
              }
 	    }
     }
