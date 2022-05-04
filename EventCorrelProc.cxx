@@ -768,8 +768,6 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
 
      for(int i=0; i<MAX_FRS_GATE; i++){
 
-         cout << "Inside single gate loop: " << i << endl;
-
          hA_FRS_ZAoQ_GeE[i]  = MakeTH1('F', Form("Correlations/FRS-Prompt_Ge/Z1vsAoQ_Ge/SinglesEnergy/Ge_EnergySum_Z1vsAoQ_Gate%d", i), Form("Germanium Energy FRS PID gated %d", i), 2000, 0, 2000, "Energy/keV");
 
          if(fCorrel->GSetup_corr_FRS_Gamma_Gamma==1){
@@ -813,11 +811,7 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
 
          hA_FRS_ZAoQ_GeEvsT_all_mhtdc[i] = MakeTH2('D',"Correlations/MHTDC/FRS-Prompt_Ge/Z1vsAoQ_Ge/GeE_vs_FRSGe_dT_Z1vsAoQ_mhtdc_All","Ge (mhtdc) vs T all",2100,-1000,20000,fCorrel->GGe1_Ge2_HistoBin,fCorrel->GGe1_Ge2_HistoMin,fCorrel->GGe1_Ge2_HistoMax,"Ge Energy (keV) (mhtdc)", "FRS - Ge time (ns)");
 
-         cout << "Just outside MHTDC gate loop: " << i << endl;
-
          for (int g=0; g<MAX_FRS_GATE; g++) {
-
-             cout << "Inside MHTDC gate loop: " << g << endl;
 
              hA_FRS_ZAoQ_GeE_mhtdc[i][g]  = MakeTH1('F', Form("Correlations/MHTDC/FRS-Prompt_Ge/Z1vsAoQ_Ge/SinglesEnergy/Ge_EnergySum_Z1vsAoQ_mhtdc_Gate%d", g), Form("Germanium Energy FRS PID Gated (mhtdc)%d", g), 2000, 0, 2000, "Energy/keV");
 
@@ -905,8 +899,6 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
              if(cInputMain->pGe_T_Aligned[g][h]>0){
 
                  hA_FRS_ZAoQ_GeEvsT_all->Fill((cInputMain->pGe_T_Aligned[g][h] - cInputMain->pGe_T_Aligned[Germanium_SC41_Det][Germanium_SC41L_Crystal_Digi]),cInputMain->pGe_EAddback[g][h]);
-
-                 cout << "Detector # " << g << " Crystal # " << h << " pGe_T_Aligned: " << cInputMain->pGe_T_Aligned[g][h] - cInputMain->pGe_T_Aligned[Germanium_SC41_Det][Germanium_SC41L_Crystal_Digi] << endl;
 
              }
 	    }
