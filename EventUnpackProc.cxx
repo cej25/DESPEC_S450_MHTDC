@@ -127,7 +127,7 @@ EventUnpackProc::EventUnpackProc(const char* name) : TGo4EventProcessor(name)
  // if(Used_Systems[4]) Make_FATIMA_TAMEX_Histos();
 
   if(Used_Systems[5]) Make_Germanium_Histos();
-  
+
   if(Used_Systems[7]) Make_BeamMonitor_Histos();
 
   RAW = new Raw_Event();
@@ -256,7 +256,7 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
   isValid=kTRUE;
   event_number=fInput->GetCount();
   fOutput-> fevent_number = event_number;
- 
+
   fOutput->fTrigger = fInput->GetTrigger();
  //cout<<"event_number " << event_number <<  endl;
   fInput->ResetIterator();
@@ -297,11 +297,11 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
         SubType = psubevt->GetSubtype();
 
         PrcID_Conv = get_Conversion(PrcID);
-   
+
         if(PrcID_Conv==-1) continue;
 
         fOutput -> fProcID[PrcID_Conv] = PrcID_Conv;
-        
+
       //  if(PrcID_Conv==5) cout<<fOutput->fTrigger;
 
         sub_evt_length  = (psubevt->GetDlen() - 2) / 2;
@@ -346,7 +346,7 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
           if (Used_Systems[0] && WR_d==0) {
              int udts2 = (int) ((((double) WR_tmp)/60E9)-FRS_WR_GAINOFFSET);
              Detector_Systems[0]->do_gain_matching(udts2);
-         
+
          }
 
 ///-----------------------------------------------------------------------------------------------------------///
@@ -361,7 +361,7 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
         //UNPACKING
         ///send subevent to respective unpacker
             if(Detector_Systems[PrcID_Conv] !=0){
-                
+
                 ///I have to skip the pulser trigger here for the beam monitor
                 if(fOutput->fTrigger!=3 && PrcID_Conv==7){
                   //  cout<<"fOutput->fTrigger " <<fOutput->fTrigger << endl;
@@ -370,8 +370,8 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
                     pdata = Detector_Systems[7]->get_pdata();
                     Detector_Systems[7]->get_Event_data(RAW);
                         }
-                    
-        
+
+
        if(PrcID_Conv!=7){
            //cout<<"2 fOutput->fTrigger "<< fOutput->fTrigger << " PrcID_Conv " << PrcID_Conv <<endl;
             Detector_Systems[PrcID_Conv]->Process_MBS(psubevt);
@@ -405,7 +405,7 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
        if(PrcID==20){
            for(int i =0; i<2; ++i){
             fOutput->fFRS_Music_dE[i] = RAW->get_FRS_MusicdE(i);
-           
+
             fOutput->fFRS_Music_dE_corr[i] = RAW->get_FRS_MusicdE_corr(i);
          //  cout<<"fOutput->fFRS_Music_dE[i] " <<fOutput->fFRS_Music_dE[i] << " i " << i << endl;
            }
@@ -497,9 +497,9 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
         fOutput->fFRS_dEdeg = RAW->get_FRS_dEdeg();
         fOutput->fFRS_dEdegoQ = RAW->get_FRS_dEdegoQ();
         ///Using MHTDC
-for (int i=0; i<10; i++){
-  
-	
+for (int i=0; i<MAX_MHTDC_HITS; i++){
+
+
 	if(RAW->get_FRS_id_mhtdc_aoq(i)>0)   fOutput->fFRS_AoQ_mhtdc[i] = RAW->get_FRS_id_mhtdc_aoq(i);
 	if(RAW->get_FRS_id_mhtdc_aoq_corr(i)>0)  fOutput->fFRS_AoQ_corr_mhtdc[i] = RAW->get_FRS_id_mhtdc_aoq_corr(i);
 	if(RAW->get_FRS_id_mhtdc_beta(i)>0.0 &&  RAW->get_FRS_id_mhtdc_beta(i)<1.0)  fOutput->fFRS_beta_mhtdc[i] = RAW->get_FRS_id_mhtdc_beta(i);
@@ -512,7 +512,7 @@ for (int i=0; i<10; i++){
 
 }
 
-	
+
 
 
 	if(RAW->get_FRS_id_mhtdc_tof4221()>0 )  fOutput->fFRS_tof4221_mhtdc = RAW->get_FRS_id_mhtdc_tof4221();
@@ -552,15 +552,15 @@ for (int i=0; i<10; i++){
         if (Used_Systems[1] && PrcID_Conv==1){
           TAidaConfiguration const* conf = TAidaConfiguration::GetInstance();
           AIDA_Hits = RAW->get_AIDA_HITS();
-	  
-	  if(AIDA_Hits>AIDA_MAX_HITS){cout<<"MAX HIST AIDA EXCEEDED" <<endl; continue;} 
+
+	  if(AIDA_Hits>AIDA_MAX_HITS){cout<<"MAX HIST AIDA EXCEEDED" <<endl; continue;}
 	    AidaEvent evt;
 	    fOutput->fAIDAHits += AIDA_Hits;
 
 	    fOutput->fAidaScalers = RAW->get_AIDA_scaler();
 
           for(int i = 0; i<AIDA_Hits; i++){
-      
+
             AIDA_Energy[i] = RAW->get_AIDA_Energy(i);
 
             AIDA_FEE[i] = RAW-> get_AIDA_FEE_ID(i);
@@ -763,101 +763,101 @@ for (int i=0; i<10; i++){
         int Phys_Channel_Trail_Slow_bPlast[bPLASTIC_TAMEX_MODULES][256];
         int bPlasdetnum_fast=-1;
         int bPlasdetnum_slow=-1;
-        
+
      if (Used_Systems[2]&& PrcID_Conv==2){
 
          ///----------------------------------------------------------///
-                        /**Output bPlast Twin peaks TAMEX **/                          
+                        /**Output bPlast Twin peaks TAMEX **/
         ///---------------------------------------------------------///
-  
+
   for (int i=0; i<RAW->get_bPLAST_TWINPEAKS_tamex_hits(); i++){///Loop over tamex ID's
-        
+
                 bPlasfired[i] = RAW->get_bPLAST_TWINPEAKS_am_Fired(i);
 
         for(int j = 0;j < bPlasfired[i];j++){///Loop over hits per board
-                
-               
-          ///NOW DEFINE FAST (ODD CHANNELS) AND SLOW  (EVEN)     
+
+
+          ///NOW DEFINE FAST (ODD CHANNELS) AND SLOW  (EVEN)
            if(j % 2 == 0 ){ ///Lead even hits
-            
+
                   ///Fast lead channels odd
              if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==1){
                      if(RAW->get_bPLAST_TWINPEAKS_lead_T(i,j)>0){
-                            Phys_Channel_Lead_Fast_bPlast[i][j] =TAMEX_bPlast_Chan[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1]; 
-             
+                            Phys_Channel_Lead_Fast_bPlast[i][j] =TAMEX_bPlast_Chan[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
+
                         bPlasdetnum_fast=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
                         fOutput->fbPlasDetNum_Fast = bPlasdetnum_fast;
-		     
+
                         int chan_bPlast_fast_lead = Phys_Channel_Lead_Fast_bPlast[i][j];
 
                         fOutput->fbPlas_FastChan[bPlasdetnum_fast] = chan_bPlast_fast_lead;
-   
+
                     if(chan_bPlast_fast_lead>-1 && chan_bPlast_fast_lead<bPLASTIC_CHAN_PER_DET) {
-  
+
                         int N1_fast = fOutput->fbPlast_Fast_Lead_N[bPlasdetnum_fast][chan_bPlast_fast_lead]++;
-          
+
                         fOutput->fbPlast_Fast_Lead[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] = RAW->get_bPLAST_TWINPEAKS_lead_T(i,j);
                            }
                         }
                       }
-                    ///Slow lead channels, even 
+                    ///Slow lead channels, even
         if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==0){
-                        
-                Phys_Channel_Lead_Slow_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)-1]; 
-                        
+
+                Phys_Channel_Lead_Slow_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)-1];
+
                 int chan_bPlast_slow_lead = Phys_Channel_Lead_Slow_bPlast[i][j];
-   
+
                  bPlasdetnum_slow=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
                   fOutput->fbPlasDetNum_Slow = bPlasdetnum_slow;
-    
-     
+
+
                 if(chan_bPlast_slow_lead>-1  && chan_bPlast_slow_lead<bPLASTIC_CHAN_PER_DET) {
                     fOutput->fbPlas_SlowChan[bPlasdetnum_slow] = chan_bPlast_slow_lead;
-         
+
                     int N1_slow = fOutput->fbPlast_Slow_Lead_N[bPlasdetnum_fast][chan_bPlast_slow_lead]++;
-          
+
                     fOutput->fbPlast_Slow_Lead[bPlasdetnum_fast][chan_bPlast_slow_lead][N1_slow] = RAW->get_bPLAST_TWINPEAKS_lead_T(i,j);
-                    
+
                             }
                     }
               }///End of lead hits
-              
-               if(j % 2 == 1){ ///TRAIL 
+
+               if(j % 2 == 1){ ///TRAIL
                               ///Fast trail channels even
         if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==0 && (RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2<256){
-                        
-                Phys_Channel_Trail_Fast_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)]; 
-                  
+
+                Phys_Channel_Trail_Fast_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)];
+
                 int chan_bPlast_fast_trail = Phys_Channel_Trail_Fast_bPlast[i][j];
 
                 bPlasdetnum_fast=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
 
                 if(chan_bPlast_fast_trail>-1&& chan_bPlast_fast_trail<bPLASTIC_CHAN_PER_DET) {
-            
+
                  int N1_fast = fOutput->fbPlast_Fast_Trail_N[bPlasdetnum_fast][chan_bPlast_fast_trail]++;
-          
+
                  fOutput->fbPlast_Fast_Trail[bPlasdetnum_fast][chan_bPlast_fast_trail][N1_fast] = RAW->get_bPLAST_TWINPEAKS_trail_T(i,j);
-            
+
                 }
             }
           ///Slow trail channels even
           if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==1 && RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)<256){
-                        
-                Phys_Channel_Trail_Slow_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)-1]; 
-                
+
+                Phys_Channel_Trail_Slow_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)-1];
+
                 bPlasdetnum_slow=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
-                 
+
                 int chan_bPlast_slow_trail = Phys_Channel_Trail_Slow_bPlast[i][j];
-                         
+
                 if(chan_bPlast_slow_trail>-1&& chan_bPlast_slow_trail<bPLASTIC_CHAN_PER_DET) {
-          
+
                     int N1_slow = fOutput->fbPlast_Slow_Trail_N[bPlasdetnum_slow][chan_bPlast_slow_trail]++;
-          
+
                     fOutput->fbPlast_Slow_Trail[bPlasdetnum_slow][chan_bPlast_slow_trail][N1_slow] = RAW->get_bPLAST_TWINPEAKS_trail_T(i,j);
-                    
-            
-                                        } /// end if max channel condition 
-                                } /// End slow trail 
+
+
+                                        } /// end if max channel condition
+                                } /// End slow trail
                            }  /// End trail
                     }/// End bPlast hits loop
                 } ///end tamex hits loop
@@ -872,22 +872,22 @@ for (int i=0; i<10; i++){
 //             int Phys_Channel_Trail_bPlas[3][bPLASTIC_CHAN_PER_DET];
 //             int N1 =0;
 //             int bPlasdetnum=-1;
-// 
+//
 //         if (Used_Systems[2]&& PrcID_Conv==2){
 //       // cout<<"Event " << event_number<<endl;
 //        for (int i=0; i<RAW->get_PLASTIC_tamex_hits(); i++){///Loop over tamex ID's
-// 
+//
 //             int chan=-1;
-// 
+//
 //            //fOutput->fbPlas_TAMEX_ID = i;
 //             bPlasfired[i] = RAW->get_PLASTIC_am_Fired(i); ///Iterator
-// 
-// 
+//
+//
 //             //TAMEX_bPlast_Det[bPlastTamID][bPlastTamCh]
-// 
-// 
+//
+//
 //             for(int j = 0;j < bPlasfired[i];j++){
-// 
+//
 //               if(RAW->get_PLASTIC_CH_ID(i,j) % 2 == 1){ //Lead odd j
 //                   //Phys_Channel_Lead_bPlas[TAMID][Hit]
 //                 Phys_Channel_Lead_bPlas[i][j] = TAMEX_bPlast_Chan[i][RAW->get_PLASTIC_physical_channel(i, j)];
@@ -898,21 +898,21 @@ for (int i=0; i<10; i++){
 //                 fOutput->fbPlasDetNum = bPlasdetnum;
 //                 fOutput->fbPlasChan[bPlasdetnum]=  chan;
 //                 N1 = fOutput->fbPlas_PMT_Lead_N[bPlasdetnum][chan]++;
-// 
-// 
+//
+//
 //             if(N1>-1 && N1<bPLASTIC_TAMEX_HITS){
-// 
+//
 //                fOutput->fbPlas_Lead_PMT[bPlasdetnum][chan][N1] = RAW->get_PLASTIC_lead_T(i,j);
 //                   }
 //                 }
 //               }
 //                if(RAW->get_PLASTIC_CH_ID(i,j) % 2 == 0){ //Trail even j
-// 
+//
 //                 Phys_Channel_Trail_bPlas[i][j] = TAMEX_bPlast_Chan[i][RAW->get_PLASTIC_physical_channel(i, j)];
 //                 chan = (Phys_Channel_Trail_bPlas[i][j]);
-// 
+//
 //                if(chan>-1){
-// 
+//
 //                 /// PMT allocation succeeded
 //                  N1 = fOutput->fbPlas_PMT_Trail_N[bPlasdetnum][chan]++;
 //                 if(N1>-1&& N1<bPLASTIC_TAMEX_HITS){
@@ -1281,12 +1281,12 @@ for (int i=0; i<10; i++){
                 fOutput->fGe_Pileup[i] = RAW->get_Germanium_Pileup(i);
                 fOutput->fGe_Overflow[i] = RAW->get_Germanium_Overflow(i);
                 fOutput->fGe_fired++;
-                
-                
-                
+
+
+
                //cout<<" get_Germanium_Trace_Length " <<RAW->get_Germanium_Trace_Length() << endl;
-               
-              
+
+
 
           }
         }
@@ -1384,23 +1384,23 @@ for (int i=0; i<10; i++){
         }
          ///--------------------------------------------------------------------------------------------///
          if (Used_Systems[7] && PrcID_Conv==7){
-             
+
              BM_Hits_S2 = RAW->get_BM_Hits_S2();
              BM_Hits_S4 = RAW->get_BM_Hits_S4();
-            
-             for(uint i=0; i<BM_Hits_S2; i++){             
-                BM_L_diff_S2[i] = RAW->get_BM_LDiff_S2(i);  
+
+             for(uint i=0; i<BM_Hits_S2; i++){
+                BM_L_diff_S2[i] = RAW->get_BM_LDiff_S2(i);
              }
-           
-             for(uint i=0; i<BM_Hits_S4; i++){             
-                BM_L_diff_S4[i] = RAW->get_BM_LDiff_S4(i);  
+
+             for(uint i=0; i<BM_Hits_S4; i++){
+                BM_L_diff_S4[i] = RAW->get_BM_LDiff_S4(i);
           //       cout<<"BM_L_diff_S4[i] " <<BM_L_diff_S4[i] << " BM_Hits_S4 " <<BM_Hits_S4  <<" i " << i << endl;
              }
-             
- 
-             
-            
-             
+
+
+
+
+
          }
         ///--------------------------------------------------------------------------------------------///
 
@@ -1432,7 +1432,7 @@ void EventUnpackProc::FILL_HISTOGRAMS(int PrcID_Conv, int PrcID, int SubType,Eve
   //if(PrcID_Conv==4 && Used_Systems[4]) Fill_FATIMA_TAMEX_Histos();
 
   if(PrcID_Conv==5 && Used_Systems[5]) Fill_Germanium_Histos();
-  
+
     ///Beam_Monitor is PrcID_Conv 7 && Used_Systems 7
   if(PrcID_Conv==7 && Used_Systems[7]) Fill_BeamMonitor_Histos();
 }
@@ -1742,12 +1742,12 @@ void EventUnpackProc::get_used_systems(){
       hSCI_Tx[index] = MakeTH1('D', Form("FRS/SCI/SCI%s/SCI%s/SCI%s_Tx",fext1[index],fext2    [index],count_title1[index]), Form("SCI%s_Tx", count_title1[index]),4096,0,4096,"Sc%s t_lr TAC [ch]", count_title1[index]);
 
       hSCI_X[index] = MakeTH1('D', Form("FRS/SCI/SCI%s/SCI%s/SCI%s_X",fext1[index],fext2[index],count_title1[index]), Form("SCI%s_X", count_title1[index]),240,-120,120,"Sc%s x-pos [mm]", count_title1[index]);
-      
-      
+
+
        hSCI_Tx_XTPC[index] = MakeTH2('D',Form("FRS/SCI/SCI%s/SCI%s/SCI%s_Tx_XfromTPC",fext1[index],fext2[index],count_title1[index]), Form("SCI%s_Tx_XfromTPC" ,count_title1[index]), 1024,0,4096,240,-120,120,"Sc%s t_lr [ch] TAC", count_title1[index] ,"X from TPC [mm]");
-       
+
        hSCI_X_XTPC[index] = MakeTH2('D',Form("FRS/SCI/SCI%s/SCI%s/SCI%s_X_XfromTPC",fext1[index],fext2[index],count_title1[index]), Form("SCI%s_X_XfromTPC" ,count_title1[index]), 240,-120,120,240,-120,120,"Sc%s x-pos [mm]", count_title1[index] ,"X from TPC [mm]");
-       
+
     }
 
         hSCI_dE24 = MakeTH2('D',"FRS/SCI/SCI_dE21-41","SCI_dE21-41",1000,10,4000,1000,10,4000,"SC21 dE","SC41 dE");
@@ -1819,15 +1819,15 @@ void EventUnpackProc::get_used_systems(){
 
     hID_AoQ = MakeTH1('D',"FRS/ID/ID_AoQ","ID_AoQ",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
     hID_AoQ_corr = MakeTH1('D',"FRS/ID/ID_AoQ_corr","ID_AoQ_corr",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
-    
-    
+
+
 
     hID_AoQ_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_AoQ_mhtdc","ID_AoQ",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
     hID_AoQ_corr_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_AoQ_corr_mhtdc","ID_AoQ_corr",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
 
 
 //     hID_Z_AoQ_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_AoQ_mhtdc", "Z1 vs A/Q",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z1 s2-s4");
-// 
+//
 //     hID_Z_AoQ_corr_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z_AoQ_corr_mhtdc", "Z1 vs A/Q",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z1 s2-s4");
 
   //  hID_Z_Z2_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_Z2_mhtdc","Z1 vs. Z2", 1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z1", "Z2");
@@ -1840,7 +1840,7 @@ void EventUnpackProc::get_used_systems(){
 
     hID_Z2_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_Z2_mhtdc","ID_Z2",1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z2 s2-s4");
 
-  
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
 for(int i=0;i<7;i++)
     {
@@ -1854,30 +1854,30 @@ for(int i=0;i<7;i++)
      hTPC_X[i] = MakeTH1('D', Form("FRS/TPC/%s/%s_X",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_X", tpc_folder_ext1[i]),800,-100.,100,"x[mm]");
 
      hTPC_Y[i] = MakeTH1('D', Form("FRS/TPC/%s/%s_Y",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_Y", tpc_folder_ext1[i]),800,-100.,100,"y[mm]");
-     
+
      hTPC_A[i][0] = MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_A11",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_A11", tpc_folder_ext1[i]),4000,5,4005, "anode A11 ADC(channels)");
       hTPC_A[i][1]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_A12",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_A12", tpc_folder_ext1[i]),4000,5,4005, "anode A12 ADC(channels)");
       hTPC_A[i][2]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_A21",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_A21", tpc_folder_ext1[i]),4000,5,4005, "anode A21 ADC(channels)");
       hTPC_A[i][3]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_A22",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_A22", tpc_folder_ext1[i]),4000,5,4005, "anode A22 ADC(channels)");
-      
+
       hTPC_L0[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_DL1",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_DL1", tpc_folder_ext1[i]),4000,5,4005, "DL1 ADC (channels)");
-      
+
       hTPC_R0[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_DR1",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_DR1", tpc_folder_ext1[i]),4000,5,4005, "DR1 ADC (channels)");
-      
+
       hTPC_L1[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_DL2",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_DL2", tpc_folder_ext1[i]),4000,5,4005, "DL2 ADC (channels)");
-      
+
       hTPC_R1[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_ADC_DR2",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_ADC_DR2", tpc_folder_ext1[i]),4000,5,4005, "DR2 ADC (channels)");
 
       // these histograms are filled by all multi-hits
-      
+
       hTPC_DT[i][0]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_A11",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_A11", tpc_folder_ext1[i]),4000,0,60000, "drift time A11 (channels = 0.1ns)");
-      
+
       hTPC_DT[i][1]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_A12",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_A12", tpc_folder_ext1[i]),4000,0,60000, "drift time A12 (channels = 0.1ns)");
-      
+
       hTPC_DT[i][2]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_A21",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_A21", tpc_folder_ext1[i]),4000,0,60000, "drift time A21 (channels = 0.1ns)");
-      
+
       hTPC_DT[i][3]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_A22",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_A22", tpc_folder_ext1[i]),4000,0,60000, "drift time A22 (channels = 0.1ns)");
-      
+
       hTPC_LT0[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_DL1",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_DL1", tpc_folder_ext1[i]),4000,0,60000, "DL1 time (channels = 0.1ns)");
       hTPC_RT0[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_DR1",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_DR1", tpc_folder_ext1[i]),4000,0,60000, "DR1 time (channels = 0.1ns)");
       hTPC_LT1[i]=MakeTH1('D', Form("FRS/TPC/%s/%s_TDC_DL2",tpc_folder_ext1[i],tpc_folder_ext1[i]), Form("%s_TDC_DL2", tpc_folder_ext1[i]),4000,0,60000, "DL2 time (channels = 0.1ns)");
@@ -1910,9 +1910,9 @@ for(int i=0;i<7;i++)
      hTPC_AY_S2_TPC_23_24 = MakeTH1('D',"FRS/TPC/S2_focus/S2_AY_TPC_23_24","S2_AX_TPC_23_24",1000,-100.,100, "angle_y at S2 focus [mrad]");
      hTPC_X_AX_S2_TPC_23_24 = MakeTH2('D',"FRS/TPC/S2_focus/S2_X_angleX (TPC23_24)","X at S2 focus vs Angle X  ", 400,-100.,100., 200,-50.0, 50.0, "X at S2 [mm]", "Angle-X [mrad]");
      hTPC_Y_AY_S2_TPC_23_24 = MakeTH2('D',"FRS/TPC/S2_focus/S2_Y_angleY (TPC23_24)","Y at S2 focus vs Angle Y  ", 400,-100.,100., 200,-50.0, 50.0, "Y at S2 [mm]", "Angle-Y [mrad]");
-     
-    
-     
+
+
+
       //TPCs At S4 focal plane
     hTPC_X_S4=MakeTH1('D',"FRS/TPC/S4_focus/S4focus_X","S4_X",1000,-100.5,100.5,"x at S4 focus [mm]");
     hTPC_Y_S4=MakeTH1('D',"FRS/TPC/S4_focus/S4focus_Y","S4_Y",1000,-100.5,100.5,"y at S4 focus [mm]");
@@ -1920,7 +1920,7 @@ for(int i=0;i<7;i++)
     hTPC_AY_S4=MakeTH1('D',"FRS/TPC/S4_focus/S4focus_AY","S4_AY",1000,-100.5,100.5, "angle_y at S4 [mrad]");
     hTPC_X_AX_S4=MakeTH2('D',"FRS/TPC/S4_focus/S4focus_X_angleX","S4focus_X_angleX", 400,-100.,100., 250,-50.0,50.0,"X at S4 [mm] ","x angle [mrad] ");
     hTPC_Y_AY_S4=MakeTH2('D',"FRS/TPC/S4_focus/S4focus_Y_angleY","S4_Y_angleY", 400,-100.,100., 250,-50.0,50.0,"Y at S4 [mm] ","y angle [mrad] ");
-     
+
     hID_x2 = MakeTH1('D',"FRS/TPC/S2_X","ID_x2",200,-100,100);
     hID_y2 = MakeTH1('D',"FRS/TPC/S2_Y","ID_y2",200,-100,100);
     hID_a2 = MakeTH1('D',"FRS/TPC/S2_angA","ID_a2",200,-100,100);
@@ -1987,9 +1987,9 @@ for(int i=0;i<7;i++)
    h1_VFTX_TOF_41_21 = (TH1D*)MakeTH1('D',"FRS/VFTX/TOF/Sci2141","TOF_Sci21_Sci41",8000,100000.,400000.,"TOF = Sci41 - Sci21 [1ps/bin]");
     h1_VFTX_TOF_41_22 = (TH1D*)MakeTH1('D',"FRS/VFTX/TOF/Sci2241","TOF_Sci22_Sci41",8000,100000.,400000.,"TOF = Sci41 - Sci22 [1ps/bin]");
     h1_VFTX_TOF_42_21 = (TH1D*)MakeTH1('D',"FRS/VFTX/TOF/Sci2142","TOF_Sci22_Sci41",8000,100000.,400000.,"TOF = Sci42 - Sci21 [1ps/bin]");
-    
+
     h1_VFTX_TOF_41_21_calib = (TH1D*)MakeTH1('D',"FRS/VFTX/TOF/Sci2141_calib","TOF_Sci21_Sci41 calib",8000,100000.,400000.,"TOF = Sci41 - Sci21 [1ps/bin]");
-    
+
     h1_VFTX_TOF_41_22_calib = (TH1D*)MakeTH1('D',"FRS/VFTX/TOF/Sci2142_calib","TOF_Sci21_Sci42 calib",8000,100000.,400000.,"TOF = Sci41 - Sci21 [1ps/bin]");
 
 
@@ -2044,7 +2044,7 @@ for(int i=0;i<7;i++)
     FRS_vftx_2241_v_cor[i] = 0;
 //     ToF_vftx_2142[i] =0;
 //     ToF_vftx_2142_calib[i] =0;
-    
+
      }
 
 
@@ -2184,7 +2184,7 @@ for(int i=0;i<7;i++)
     ID_z2_mhtdc[i] = RAW->get_FRS_id_mhtdc_z2(i);
   }
     ID_tof4221_mhtdc = RAW->get_FRS_id_mhtdc_tof4221();
-  
+
    }
    // ID_z3 = RAW->get_FRS_z3();
 for(int i=0; i<32; i++){
@@ -2202,9 +2202,9 @@ for(int i=0; i<32; i++){
     ToF_vftx_2241_calib[i] = RAW->get_FRS_ToF_vftx_2241_calib(i);
 //     ToF_vftx_2142[i] = RAW->get_FRS_ToF_vftx_2142(i);
 //     ToF_vftx_2142_calib[i] = RAW->get_FRS_ToF_vftx_2142_calib(i);
-    
-    
- }  
+
+
+ }
 
 //     for(int i=0; i<32; i++){
 //    TRaw_vftx[i] = RAW->get_FRS_TRaw_vftx(i);
@@ -2305,7 +2305,7 @@ for(int i=0; i<32; i++){
      if(PrcID==20 &&SubType==1 ){
 //          cout<<"event " << event_number<<" sci_r[idx] " <<sci_r[idx]<< " idx " << idx <<" cnt " << cnt <<" PrcID " <<PrcID<< " SubType " << SubType << endl;
         if(beta!=0 && cnt==0 )hID_beta->Fill(beta*1000);
-      
+
 //
 
          scalers_done = false;
@@ -2316,13 +2316,13 @@ for(int i=0; i<32; i++){
 
             }
      }
-    
+
     ///SCI vs TPC for SCI pos calib
           if(sci_tx[2]!=0 && TPC_23_24_X_sc21!=-999) hSCI_Tx_XTPC[2]->Fill(sci_tx[2],TPC_23_24_X_sc21);
           if(sci_tx[3]!=0&& TPC_23_24_X_sc22!=-999) hSCI_Tx_XTPC[3]->Fill(sci_tx[3],TPC_23_24_X_sc22);
           if(sci_tx[5]!=0&& TPC_X_sc41!=-999) hSCI_Tx_XTPC[5]->Fill(sci_tx[5],TPC_X_sc41);
           if(sci_tx[6]!=0&& TPC_X_sc42!=-999) hSCI_Tx_XTPC[6]->Fill(sci_tx[6],TPC_X_sc42);
-          
+
 	      if(sci_x[2]!=0 && TPC_23_24_X_sc21!=-999) hSCI_X_XTPC[2]->Fill(sci_x[2],TPC_23_24_X_sc21);
           if(sci_x[3]!=0 && TPC_23_24_X_sc22!=-999) hSCI_X_XTPC[3]->Fill(sci_x[3],TPC_23_24_X_sc22);
           if(sci_x[5]!=0 && TPC_X_sc41!=-999) hSCI_X_XTPC[5]->Fill(sci_x[5],TPC_X_sc41);
@@ -2353,14 +2353,14 @@ for(int i=0; i<32; i++){
   	  if(TPC_Y_angle_s2_foc_23_24!=-999)hTPC_AY_S2_TPC_23_24->Fill(TPC_Y_angle_s2_foc_23_24);
 	   if(TPC_X_s2_foc_23_24!=-999 && TPC_X_angle_s2_foc_23_24!=-999) hTPC_X_AX_S2_TPC_23_24->Fill(TPC_X_s2_foc_23_24, TPC_X_angle_s2_foc_23_24);
 	  if(TPC_Y_s2_foc_23_24!=-999 && TPC_Y_angle_s2_foc_23_24!=-999)hTPC_Y_AY_S2_TPC_23_24->Fill(TPC_Y_s2_foc_23_24, TPC_Y_angle_s2_foc_23_24);
-      
+
       hTPC_X_S4->Fill(TPC_X_s4);
 	  hTPC_Y_S4->Fill(TPC_Y_s4);
 	  hTPC_AX_S4->Fill(TPC_X_angle_s4);
 	  hTPC_AY_S4->Fill(TPC_Y_angle_s4);
 	  hTPC_X_AX_S4->Fill(TPC_X_s4,TPC_X_angle_s4);
 	  hTPC_Y_AY_S4->Fill(TPC_Y_s4,TPC_Y_angle_s4);
-      
+
 
     if(PrcID==30){
 
@@ -2404,7 +2404,7 @@ if(PrcID==20 && SubType==1){
       // for(int j=0; j<2; j++){
            for(int k=0; k<64; k++){
       // if(TPC_LT[i][j][0]!=0 && TPC_RT[i][j][0]!=0)    hTPC_LTRT[i]->Fill(TPC_LT[i][j][0],TPC_RT[i][j][0]);
-         
+
       if(TPC_LT[i][0][k]!=0) hTPC_LT0[i]->Fill(TPC_LT[i][0][k]);
       if(TPC_RT[i][0][k]!=0) hTPC_RT0[i]->Fill(TPC_RT[i][0][k]);
       if(TPC_LT[i][1][k]!=0) hTPC_LT1[i]->Fill(TPC_LT[i][1][k]);
@@ -2416,12 +2416,12 @@ if(PrcID==20 && SubType==1){
     	 if(TPC_L[i][1]!=0)  hTPC_L1[i]->Fill(TPC_L[i][1]);
     	 if(TPC_R[i][1]!=0)  hTPC_R1[i]->Fill(TPC_R[i][1]);
            // }
-         for(int j=0; j<4; j++){  
+         for(int j=0; j<4; j++){
              hTPC_A[i][j]->Fill(TPC_A[i][j]);
             for(int k=0; k<64; k++) hTPC_DT[i][j] ->Fill(TPC_DT[i][j][k]);
         }
-     
-        
+
+
     }
 }
 
@@ -2471,20 +2471,20 @@ if(PrcID==20){
 
 //      if(ID_x2!=0&&ID_x4!=0 ) hID_x2x4->Fill(ID_x2, ID_x4);
 //      if(AoQ!=0 && sci_e[5]!=0) hID_SC41dE_AoQ->Fill(AoQ, sci_e[5]);
-// 
+//
 //      if(sci_tof2!=0 && Music_dE[0]!=0) hID_dEToF->Fill(sci_tof2, Music_dE[0]);
-// 
+//
 //      if(ID_z!=0 && ID_x2!=0) hID_x2z->Fill(ID_z, ID_x2);// MUSIC1
 //      if(ID_z!=0 && ID_x4!=0) hID_x4z->Fill(ID_z, ID_x4);// MUSIC1
-// 
+//
 //      if(ID_x4!=0 && Music_dE[0]!=0) hID_E_Xs4->Fill(ID_x4,Music_dE[0]);
 //      if(ID_x4!=0 && Music_dE[0]!=0)hID_E_Xs2->Fill(ID_x2,Music_dE[0]);
-// 
+//
 //      if(ID_x2!=0 && ID_a2!=0)hID_x2a2->Fill(ID_x2,ID_a2);
 //      if(ID_y2!=0 && ID_b2!=0)hID_y2b2->Fill(ID_y2,ID_b2);
 //      if(ID_x4!=0 && ID_a4!=0)hID_x4a4->Fill(ID_x4,ID_a4);
 //      if(ID_x4!=0 && ID_b4!=0) hID_y4b4->Fill(ID_y4,ID_b4);
-//      
+//
 //      if(AoQ_corr!=0 && ID_a2!=0)hID_AoQa2->Fill(AoQ_corr,ID_a2);
 //      if(AoQ_corr!=0 && ID_a4!=0)hID_AoQa4->Fill(AoQ_corr,ID_a4);
 
@@ -2492,9 +2492,9 @@ if(PrcID==20){
      ///MHTDC
           if(ID_tof4221_mhtdc!=0)hMultiHitTDC_TOF_42_21->Fill(ID_tof4221_mhtdc);
 
-     
 
-     for(int i=0; i<10;i++){
+
+     for(int i=0; i<MAX_MHTDC_HITS;i++){
      if(AoQ_mhtdc[i]!=0){
 
   if(ID_tof4121_mhtdc[i]!=0) hMultiHitTDC_TOF_41_21->Fill(ID_tof4121_mhtdc[i]);
@@ -2563,67 +2563,67 @@ for(int i=0; i<32; i++){
     /// SCI41 Position
       if(TRaw_vftx_41l[i]!=0. && TRaw_vftx_41r[i]!=0.){
    hvftx_Sci41PosRaw->Fill((TRaw_vftx_41l[i]-TRaw_vftx_41r[i])); ///1ps
-//  cout<<"event " << event_number << " TRaw_vftx_41l " << TRaw_vftx_41l << " TRaw_vftx_41r " << TRaw_vftx_41r<<" TRaw_vftx_41l-TRaw_vftx_41r " <<TRaw_vftx_41l-TRaw_vftx_41r << endl; 
+//  cout<<"event " << event_number << " TRaw_vftx_41l " << TRaw_vftx_41l << " TRaw_vftx_41r " << TRaw_vftx_41r<<" TRaw_vftx_41l-TRaw_vftx_41r " <<TRaw_vftx_41l-TRaw_vftx_41r << endl;
     }
     /// SCI42 Position
      if(TRaw_vftx_42l[i]!=0. && TRaw_vftx_42r[i]!=0.){
    hvftx_Sci42PosRaw->Fill((TRaw_vftx_42l[i]-TRaw_vftx_42r[i])); ///1ps
 
     }
-    
+
     ///ToF's
    if(ToF_vftx_2141[i]!=0) h1_VFTX_TOF_41_21->Fill(ToF_vftx_2141[i]);
     if(ToF_vftx_2241[i]!=0) h1_VFTX_TOF_41_22->Fill(ToF_vftx_2241[i]);
     //h1_VFTX_TOF_42_21->Fill(ToF_vftx_2142[i]);
-    
+
     if(ToF_vftx_2141_calib[i]!=0) h1_VFTX_TOF_41_21_calib->Fill(ToF_vftx_2141_calib[i]);
     if(ToF_vftx_2241_calib[i]!=0) h1_VFTX_TOF_41_22_calib->Fill(ToF_vftx_2241_calib[i]);
    // h1_VFTX_TOF_42_21->Fill(ToF_vftx_2142_calib[i]);
-    
-    
-    
+
+
+
    // cout<<" TRaw_vftx_41l "<<TRaw_vftx_41l << " TRaw_vftx_41r "<<TRaw_vftx_41r <<" TRaw_vftx_21l "<<TRaw_vftx_21l <<" TRaw_vftx_21r " <<TRaw_vftx_21r  << "TOF " <<(0.5*((TRaw_vftx_41l+TRaw_vftx_41r)-(TRaw_vftx_21l+TRaw_vftx_21r)))<< endl;
 //    ///SCI41 -SCI21 ToF
 //   if(TRaw_vftx_41l[i]!=0.&&TRaw_vftx_41r[i]!=0.&&TRaw_vftx_21l[i]!=0.&&TRaw_vftx_21r[i]!=0.){
 //    hvftx_ToFraw_2141->Fill((0.5*((TRaw_vftx_41l[i]+TRaw_vftx_41r)-(TRaw_vftx_21l+TRaw_vftx_21r))));//ps
-// 
+//
 //     }
 //     ///SCI41 -SCI21 LL
 //   if(TRaw_vftx_41l!=0.&&TRaw_vftx_21l!=0.){
 //    hvftx_ToFraw_2141LL->Fill((TRaw_vftx_41l-TRaw_vftx_21l));//ps
-// 
+//
 //     }
-//     
+//
 //     ///SCI41 -SCI22 LL
 //   if(TRaw_vftx_41l!=0.&&TRaw_vftx_21l!=0.){
 //    hvftx_ToFraw_2241LL->Fill((TRaw_vftx_41l-TRaw_vftx_22l));//ps
-// 
+//
 //     }
-//     
+//
 //     ///SCI41 -SCI21 RR
 //   if(TRaw_vftx_41r!=0.&& TRaw_vftx_21r!=0.){
 //    hvftx_ToFraw_2241RR->Fill((TRaw_vftx_41r-TRaw_vftx_22r));//ps
-// 
+//
 //     }
-//     
+//
 //     ///SCI41 -SCI22 RR
 //   if(TRaw_vftx_41r!=0.&& TRaw_vftx_21r!=0.){
 //    hvftx_ToFraw_2141RR->Fill((TRaw_vftx_41r-TRaw_vftx_21r));//ps
-// 
+//
 //     }
-//     
+//
 //      ///SCI42 -SCI21 LL
 //   if(TRaw_vftx_42l!= 0 &&TRaw_vftx_21l!= 0){
 //    hvftx_ToFraw_2142LL->Fill((TRaw_vftx_42l-TRaw_vftx_21l));//ps
-// 
+//
 //     }
-//     
+//
 //     ///SCI42 -SCI21 RR
 //   if(TRaw_vftx_42r!=0 && TRaw_vftx_21r!=0){
 //    hvftx_ToFraw_2141RR->Fill((TRaw_vftx_42r-TRaw_vftx_21r));//ps
-// 
+//
 //         }
-        
+
 }
     }
   }
@@ -3011,16 +3011,16 @@ void EventUnpackProc::Make_Germanium_Histos(){
                     h_trace[i][j] = MakeTH1('I', chis,chead,Germanium_TRACE_LENGTH,0,Germanium_TRACE_LENGTH);
               }
                     hGe_Raw_E[i][j] = MakeTH1('D',Form("Germanium/Raw/Germanium_Energy_Spectra/Germanium_Raw_E_Det:%2d_Crystal:%2d",i,j),Form("Germanium Energy Raw Det%2d Crystal%2d",i,j),5000,0,5000);
-                    
+
         }
     }
 //   for (int j; j<Germanium_MAX_HITS; j++){
-//       
+//
 //
 //                     }
 //     hFebTime  = MakeTH1('D',"SysTime/FebexClock","Febex clock",200000,0,200000);
                 }
-/**----------------------------------------------------------------------------------------------**/                
+/**----------------------------------------------------------------------------------------------**/
 void EventUnpackProc::Fill_Germanium_Histos(){
 
     //double tmpGe[32];
@@ -3029,14 +3029,14 @@ void EventUnpackProc::Fill_Germanium_Histos(){
 
      /**------------------Germanium Raw Energy -----------------------------------------**/
       Germanium_hits = RAW->get_Germanium_am_Fired();
-      
+
          for(int i=0; i<Germanium_hits; i++){
             if(RAW->get_Germanium_Det_id(i)>-1){
                hGe_Raw_E[RAW->get_Germanium_Det_id(i)][RAW->get_Germanium_Crystal_id(i)]->Fill(RAW->get_Germanium_Chan_E(i));
-               
+
           if(Germanium_TRACES_ACTIVE){
             for(int l_l=0; l_l<RAW->get_Germanium_Trace_Length()/2; l_l++){
-                     
+
                       h_trace[RAW->get_Germanium_Det_id(i)][RAW->get_Germanium_Crystal_id(i)]->SetBinContent (l_l*2  ,RAW->get_Germanium_Trace_First(i,l_l));
                       h_trace[RAW->get_Germanium_Det_id(i)][RAW->get_Germanium_Crystal_id(i)]->SetBinContent (l_l*2+1,RAW->get_Germanium_Trace_Second(i,l_l));
                   }
@@ -3056,44 +3056,44 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
 	BM_S4_count = 0;
  	BM_S4_QFcount = 0;
 	BM_S4_SumTdiff = 0;
-		
+
  	// S4
  	Text_t chis[256];
   	Text_t chead[256];
-	
+
 	sprintf (chis,"BEAM_MONITOR/S4/NormalizedHitTimeDifferenceS4");
 	sprintf (chead,"S4 Normalized Hit Time Difference [100ns]");
 	hBM_s4h_norm_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S4/HitTimeDifferenceS4");
 	sprintf (chead,"S4 Hit Time Difference [100ns]");
 	hBM_s4h_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S4/HitTimesS4");
 	sprintf (chead,"S4 Hit Time [ms]: bins are 100us wide");
 	hBM_s4h_t1 = MakeTH1 ('D', chis, chead, BM_NBinsMax, 0, BM_NTimeMax);
-   	
+
 	sprintf (chis,"BEAM_MONITOR/S4/HitsPerSpillS4");
-	sprintf (chead,"S4 Hits per spill");	
+	sprintf (chead,"S4 Hits per spill");
 	hBM_s4h_n = MakeTH1 ('D', chis, chead, 600, 0, 6000);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S4/PoissonS4");
 	sprintf (chead,"S4 Poisson");
 	hBM_s4h_poisson = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S4/CumulativeHitsS4");
 	sprintf (chead,"S4 Cumulative Hit Times [100ns]");
 	hBM_s4h_c = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S4/CumulativeHitDiffS4");
 	sprintf (chead,"S4 Deviation of Cumulative Hit Times [100ns]");
-	hBM_s4h_dc = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);	
-		
+	hBM_s4h_dc = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+
 	sprintf (chis,"BEAM_MONITOR/S4/CumulativePoissonS4");
 	sprintf (chead,"S4 Cumulative Poisson [100ns]");
 	hBM_s4h_cp = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
 
-	
+
 	gBM_s4gr_dt_avrg = MakeGraph("BEAM_MONITOR/S4/AverageTimeDifference","S4 Average Time Difference", 1,0,0);
 	gBM_s4gr_dt_avrg->GetXaxis()->SetTimeDisplay(1);
 	gBM_s4gr_dt_avrg->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3107,7 +3107,7 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s4gr_dt_avrg->SetLineWidth(2);
    	gBM_s4gr_dt_avrg->GetXaxis()->SetNdivisions(-4);
 	gBM_s4gr_dt_avrg->Draw("APC");
-	
+
 	gBM_s4gr_qf = MakeGraph("BEAM_MONITOR/S4/QualityFactor","S4 Quality Factor",  1,0,0);
 	gBM_s4gr_qf->GetXaxis()->SetTimeDisplay(1);
 	gBM_s4gr_qf->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3121,7 +3121,7 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s4gr_qf->SetLineWidth(2);
    	gBM_s4gr_qf->GetXaxis()->SetNdivisions(-4);
 	gBM_s4gr_qf->Draw("APC");
-	
+
 	gBM_s4gr_dcmin = MakeGraph("BEAM_MONITOR/S4/LargestDeviationFromIdeal","S4 Largest Deviation From Ideal", 1,0,0);
 	gBM_s4gr_dcmin->GetXaxis()->SetTimeDisplay(1);
 	gBM_s4gr_dcmin->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3135,7 +3135,7 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s4gr_dcmin->SetLineWidth(2);
    	gBM_s4gr_dcmin->GetXaxis()->SetNdivisions(-4);
 	gBM_s4gr_dcmin->Draw("APC");
-	
+
 	gBM_s4gr_dctime = MakeGraph("BEAM_MONITOR/S4/TimeDifferenceLargestDeviation","S4 Time Difference with the largest deviation [us]",  1,0,0);
 	gBM_s4gr_dctime->GetXaxis()->SetTimeDisplay(1);
 	gBM_s4gr_dctime->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3149,43 +3149,43 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s4gr_dctime->SetLineWidth(2);
    	gBM_s4gr_dctime->GetXaxis()->SetNdivisions(-4);
 	gBM_s4gr_dctime->Draw("APC");
-	
-	
+
+
 	// S2
-	
+
 	sprintf (chis,"BEAM_MONITOR/S2/NormalizedHitTimeDifferenceS2");
 	sprintf (chead,"S2 Normalized Hit Time Difference [100ns]");
 	hBM_s2h_norm_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S2/HitTimeDifferenceS2");
 	sprintf (chead,"S2 Hit Time Difference [100ns]");
 	hBM_s2h_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S2/HitTimesS2");
 	sprintf (chead,"S2 Hit Time [ms]: bins are 100us wide");
 	hBM_s2h_t1 = MakeTH1 ('D', chis, chead, BM_NBinsMax, 0, BM_NTimeMax);
-   	
+
 	sprintf (chis,"BEAM_MONITOR/S2/HitsPerSpillS2");
-	sprintf (chead,"S2 Hits per spill");	
+	sprintf (chead,"S2 Hits per spill");
 	hBM_s2h_n = MakeTH1 ('D', chis, chead, 600, 0, 6000);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S2/PoissonS2");
 	sprintf (chead,"S2 Poisson");
 	hBM_s2h_poisson = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S2/CumulativeHitsS2");
 	sprintf (chead,"S2 Cumulative Hit Times [100ns]");
 	hBM_s2h_c = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
-	
+
 	sprintf (chis,"BEAM_MONITOR/S2/CumulativeHitDiffS2");
 	sprintf (chead,"S2 Deviation of Cumulative Hit Times [100ns]");
-	hBM_s2h_dc = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);	
-		
+	hBM_s2h_dc = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+
 	sprintf (chis,"BEAM_MONITOR/S2/CumulativePoissonS2");
 	sprintf (chead,"S2 Cumulative Poisson [100ns]");
 	hBM_s2h_cp = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
 
-	
+
 	gBM_s2gr_dt_avrg = MakeGraph("BEAM_MONITOR/S2/AverageTimeDifference","S2 Average Time Difference", 1,0,0);
 	gBM_s2gr_dt_avrg->GetXaxis()->SetTimeDisplay(1);
 	gBM_s2gr_dt_avrg->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3199,7 +3199,7 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s2gr_dt_avrg->SetLineWidth(2);
    	gBM_s2gr_dt_avrg->GetXaxis()->SetNdivisions(-4);
 	gBM_s2gr_dt_avrg->Draw("APC");
-	
+
 	gBM_s2gr_qf = MakeGraph("BEAM_MONITOR/S2/QualityFactor","S2 Quality Factor",  1,0,0);
 	gBM_s2gr_qf->GetXaxis()->SetTimeDisplay(1);
 	gBM_s2gr_qf->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3213,7 +3213,7 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s2gr_qf->SetLineWidth(2);
    	gBM_s2gr_qf->GetXaxis()->SetNdivisions(-4);
 	gBM_s2gr_qf->Draw("APC");
-	
+
 	gBM_s2gr_dcmin = MakeGraph("BEAM_MONITOR/S2/LargestDeviationFromIdeal","S2 Largest Deviation From Ideal", 1,0,0);
 	gBM_s2gr_dcmin->GetXaxis()->SetTimeDisplay(1);
 	gBM_s2gr_dcmin->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3227,7 +3227,7 @@ void EventUnpackProc::Make_BeamMonitor_Histos(){
    	gBM_s2gr_dcmin->SetLineWidth(2);
    	gBM_s2gr_dcmin->GetXaxis()->SetNdivisions(-4);
 	gBM_s2gr_dcmin->Draw("APC");
-	
+
 	gBM_s2gr_dctime = MakeGraph("BEAM_MONITOR/S2/TimeDifferenceLargestDeviation","S2 Time Difference with the largest deviation [us]",  1,0,0);
 	gBM_s2gr_dctime->GetXaxis()->SetTimeDisplay(1);
 	gBM_s2gr_dctime->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
@@ -3249,58 +3249,58 @@ void EventUnpackProc::Fill_BeamMonitor_Histos(){
 	Double_t BM_CR_timesum;
 	Int_t BM_CR_relevanthits;
 	Double_t BM_CR_Tlimit = pow(10,6); // in [100ns] units, insures that times between spills are not counted when computing count rate, should be much lower than the expected time between spills (for 1s off spill, 100ms or lower should be fine)
-	
+
 	Double_t BM_Tdiff_integral;
 	Double_t BM_dc_MinValue;
 	Int_t BM_dc_MinBin;
-		
+
 	Double_t BM_QF;
 	Double_t BM_Tmean;
-	
+
 	//S2:
 	BM_Hits = RAW->get_BM_Hits_S2();
 	for(Int_t i=0; i<BM_Hits; ++i) {
 
-		BM_S2_Tdiffs[BM_S2_count] = RAW->get_BM_LDiff_S2(i)/10; // save time diffs for analysis & change units from [10ns] to [100ns] 
-		
+		BM_S2_Tdiffs[BM_S2_count] = RAW->get_BM_LDiff_S2(i)/10; // save time diffs for analysis & change units from [10ns] to [100ns]
+
 		hBM_s2h_tdiff->Fill(BM_S2_Tdiffs[BM_S2_count]);
 		++BM_S2_count;
-		
+
 		if(BM_S2_count > BM_S2_MaxTdiffs) {
-			BM_S2_count = BM_S2_count % BM_S2_MaxTdiffs;	
+			BM_S2_count = BM_S2_count % BM_S2_MaxTdiffs;
 			}
-			
+
 		if(BM_S2_count % BM_S2_DoAnalysisEvery == 0) { // analysis of Tdiff data every BM_S2_DoAnalysisEvery number of hits
-			
+
 			BM_CR_timesum = 0;
 			BM_CR_relevanthits = 0;
-			
+
 			for(Int_t k=0; k<BM_S2_MaxTdiffs; ++k) {
 				if((Double_t) BM_S2_SumTdiff < (Double_t) BM_NTimeMax*pow(10,5)) {
 					BM_S2_SumTdiff += BM_S2_Tdiffs[ ( BM_S2_count + k ) % BM_S2_MaxTdiffs ];
 					hBM_s2h_t1->Fill((Double_t) BM_S2_SumTdiff*pow(10,-5));
-					} 
+					}
 				else {
 					hBM_s2h_t1->Reset("ICESM");
 					BM_S2_SumTdiff = 0;
 					}
-					
-				if(BM_S2_Tdiffs[k] < BM_CR_Tlimit) { 
-					BM_CR_timesum+=BM_S2_Tdiffs[k]; 
+
+				if(BM_S2_Tdiffs[k] < BM_CR_Tlimit) {
+					BM_CR_timesum+=BM_S2_Tdiffs[k];
 					++BM_CR_relevanthits;
 					}
 				}
-				
+
 			BM_CountRate = (Double_t) BM_CR_relevanthits / BM_CR_timesum;
-			
+
 			BM_Tdiff_integral = hBM_s2h_tdiff->Integral(0, BM_MaxTimeDiff);
-			
-			for(Int_t j=0; j<BM_S2_MaxTdiffs; ++j) { 
+
+			for(Int_t j=0; j<BM_S2_MaxTdiffs; ++j) {
 				hBM_s2h_norm_tdiff->SetBinContent(j, hBM_s2h_tdiff->GetBinContent(j) / BM_Tdiff_integral); 			// normalize hBM_s2h_tdiff
 				hBM_s2h_poisson->SetBinContent(j, exp(-BM_CountRate*((Double_t) j)) - exp(-BM_CountRate*((Double_t) j+1))); // get theoretical tdiffs from BM_CountRate
-				
-				// get cumulative histograms for measured, theoretical and their difference	
-				if(j==0) { 
+
+				// get cumulative histograms for measured, theoretical and their difference
+				if(j==0) {
 					hBM_s2h_c->SetBinContent(j,0);
 					hBM_s2h_cp->SetBinContent(j,0);
 					}
@@ -3310,18 +3310,18 @@ void EventUnpackProc::Fill_BeamMonitor_Histos(){
 					}
 				hBM_s2h_dc->SetBinContent(j,hBM_s2h_cp->GetBinContent(j) - hBM_s2h_c->GetBinContent(j));
 				}
-			
+
 			BM_dc_MinBin = hBM_s2h_dc->GetMinimumBin();
 			BM_dc_MinValue = hBM_s2h_dc->GetBinContent(BM_dc_MinBin);
 			BM_Tmean =  hBM_s2h_norm_tdiff->GetMean();
-			
+
 			// compute quality factor
 			BM_QF = 100.0*(1.0 - (hBM_s2h_norm_tdiff->Integral(0, (Int_t) BM_Tmean) / hBM_s2h_poisson->Integral(0, (Int_t) BM_Tmean)));
-			
+
 			// get local time
 			time_t rawtime;
 			time(&rawtime);
-			
+
 			// add points to graphs
 			gBM_s2gr_qf->TGraph::SetPoint(BM_S2_QFcount, rawtime, BM_QF);
 			gBM_s2gr_dcmin->TGraph::SetPoint(BM_S2_QFcount, rawtime, BM_dc_MinValue);
@@ -3334,46 +3334,46 @@ void EventUnpackProc::Fill_BeamMonitor_Histos(){
 	BM_Hits = RAW->get_BM_Hits_S4();
 	for(Int_t i=0; i<BM_Hits; ++i) {
 
-		BM_S4_Tdiffs[BM_S4_count] = RAW->get_BM_LDiff_S4(i)/10; // save time diffs for analysis & change units from [10ns] to [100ns] 
-		
+		BM_S4_Tdiffs[BM_S4_count] = RAW->get_BM_LDiff_S4(i)/10; // save time diffs for analysis & change units from [10ns] to [100ns]
+
 		hBM_s4h_tdiff->Fill(BM_S4_Tdiffs[BM_S4_count]);
 		++BM_S4_count;
-		
+
 		if(BM_S4_count > BM_S4_MaxTdiffs) {
-			BM_S4_count = BM_S4_count % BM_S4_MaxTdiffs;	
+			BM_S4_count = BM_S4_count % BM_S4_MaxTdiffs;
 			}
-			
+
 		if(BM_S4_count % BM_S4_DoAnalysisEvery == 0) { // analysis of Tdiff data every BM_S4_DoAnalysisEvery number of hits
-			
+
 			BM_CR_timesum = 0;
 			BM_CR_relevanthits = 0;
-			
+
 			for(Int_t k=0; k<BM_S4_MaxTdiffs; ++k) {
 				if((Double_t) BM_S4_SumTdiff < (Double_t) BM_NTimeMax*pow(10,5)) {
 					BM_S4_SumTdiff += BM_S4_Tdiffs[ ( BM_S4_count + k ) % BM_S4_MaxTdiffs ];
 					hBM_s4h_t1->Fill((Double_t) BM_S4_SumTdiff*pow(10,-5));
-					} 
+					}
 				else {
 					hBM_s4h_t1->Reset("ICESM");
 					BM_S4_SumTdiff = 0;
 					}
-										
-				if(BM_S4_Tdiffs[k] < BM_CR_Tlimit) { 
-					BM_CR_timesum+=BM_S4_Tdiffs[k]; 
+
+				if(BM_S4_Tdiffs[k] < BM_CR_Tlimit) {
+					BM_CR_timesum+=BM_S4_Tdiffs[k];
 					++BM_CR_relevanthits;
 					}
 				}
-				
+
 			BM_CountRate = (Double_t) BM_CR_relevanthits / BM_CR_timesum;
-			
+
 			BM_Tdiff_integral = hBM_s4h_tdiff->Integral(0, BM_MaxTimeDiff);
-			
-			for(Int_t j=0; j<BM_S4_MaxTdiffs; ++j) { 
+
+			for(Int_t j=0; j<BM_S4_MaxTdiffs; ++j) {
 				hBM_s4h_norm_tdiff->SetBinContent(j, hBM_s4h_tdiff->GetBinContent(j) / BM_Tdiff_integral); 			// normalize hBM_s4h_tdiff
 				hBM_s4h_poisson->SetBinContent(j, exp(-BM_CountRate*((Double_t) j)) - exp(-BM_CountRate*((Double_t) j+1))); // get theoretical tdiffs from BM_CountRate
-				
-				// get cumulative histograms for measured, theoretical and their difference	
-				if(j==0) { 
+
+				// get cumulative histograms for measured, theoretical and their difference
+				if(j==0) {
 					hBM_s4h_c->SetBinContent(j,0);
 					hBM_s4h_cp->SetBinContent(j,0);
 					}
@@ -3383,18 +3383,18 @@ void EventUnpackProc::Fill_BeamMonitor_Histos(){
 					}
 				hBM_s4h_dc->SetBinContent(j,hBM_s4h_cp->GetBinContent(j) - hBM_s4h_c->GetBinContent(j));
 				}
-			
+
 			BM_dc_MinBin = hBM_s4h_dc->GetMinimumBin();
 			BM_dc_MinValue = hBM_s4h_dc->GetBinContent(BM_dc_MinBin);
 			BM_Tmean =  hBM_s4h_norm_tdiff->GetMean();
-			
+
 			// compute quality factor
 			BM_QF = 100.0*(1.0 - (hBM_s4h_norm_tdiff->Integral(0, (Int_t) BM_Tmean) / hBM_s4h_poisson->Integral(0, (Int_t) BM_Tmean)));
-			
+
 			// get local time
 			time_t rawtime;
 			time(&rawtime);
-			
+
 			// add point to graphs
 			gBM_s4gr_qf->TGraph::SetPoint(BM_S4_QFcount, rawtime, BM_QF);
 			gBM_s4gr_dcmin->TGraph::SetPoint(BM_S4_QFcount, rawtime, BM_dc_MinValue);
@@ -3403,7 +3403,7 @@ void EventUnpackProc::Fill_BeamMonitor_Histos(){
 			++BM_S4_QFcount;
 			}
 		}
-    
+
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -3528,7 +3528,7 @@ TH1I* EventUnpackProc::MakeH1I(const char* fname,
 //                              Color_t markercolor) {
 // //    TNamed* res = TestObject((getfunc)&TGo4EventProcessor::GetHistogram, fname, hname);
 // //    if (res!=0) return dynamic_cast<TH2I*>(res);
-// 
+//
 //    TH2I* histo = new TH2I(hname, hname, nbinsx, xmin, xmax, nbinsy, ymin, ymax);
 //    histo->SetMarkerColor(markercolor);
 //    histo->SetXTitle(xtitle);
