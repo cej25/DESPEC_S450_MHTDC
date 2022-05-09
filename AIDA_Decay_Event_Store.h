@@ -126,4 +126,17 @@ public:
   ClassDefNV(AidaScaler, 2);
 };
 
+class AidaPauseResume : public TObject
+{
+public:
+  int Module;
+  int64_t Time;
+  bool Pause;
+
+  AidaPauseResume() {}
+  AidaPauseResume(int m, int64_t t, bool p) : Module(m), Time(t), Pause(p) {}
+
+  ClassDefNV(AidaPauseResume, 2);
+};
+
 #endif /* TAIDAEVENT_H */

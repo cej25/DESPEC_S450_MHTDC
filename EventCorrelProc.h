@@ -222,8 +222,8 @@ class EventCorrelProc : public TGo4EventProcessor {
 
         Int_t bPlast_Det;
         Int_t bPlast_Chan;
-        Int_t Beta_Gate_Low[bPLASTIC_TAMEX_MODULES+1][bPLASTIC_CHAN_PER_DET];
-        Int_t Beta_Gate_High[bPLASTIC_TAMEX_MODULES+1][bPLASTIC_CHAN_PER_DET];
+        Int_t Beta_Gate_Low[4][bPLASTIC_CHAN_PER_DET];
+        Int_t Beta_Gate_High[4][bPLASTIC_CHAN_PER_DET];
 
         TH1 *hAida_Implant_deadtime;
         TH1 *hAida_Decay_deadtime;
@@ -385,8 +385,8 @@ class EventCorrelProc : public TGo4EventProcessor {
       TH2 *hbPlast_SpillOff_Fatima_GamGam;
       TH1 *hbPlast_SpillOff_Germanium;
       TH2 *hbPlast_SpillOff_Germanium_GamGam;
-      TH1 *hbPlas_ToT_SpillOff[bPLASTIC_TAMEX_MODULES+1][bPLASTIC_CHAN_PER_DET];
-      TH1 *hbPlas_ToT_SpillOn[bPLASTIC_TAMEX_MODULES+1][bPLASTIC_CHAN_PER_DET];
+      TH1 *hbPlas_ToT_SpillOff[4][bPLASTIC_CHAN_PER_DET];
+      TH1 *hbPlas_ToT_SpillOn[4][bPLASTIC_CHAN_PER_DET];
 
      ///AIDA BDG's
       TH1 *hGe_BetaGamma;

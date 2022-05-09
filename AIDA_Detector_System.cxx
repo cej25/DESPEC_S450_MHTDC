@@ -124,7 +124,7 @@ void AIDA_Detector_System::get_Event_data(Raw_Event* RAW){
     std::cout << " Extra Hits will be ignored" << std::endl;
     Hits = AIDA_MAX_HITS;
   }
-  RAW->set_DATA_AIDA(Energy, FEE_ID, Ch_ID, Time, Hits, HighE_veto, Side, Strip, EvtID, FastTime, AdcData, ScalerData);
+  RAW->set_DATA_AIDA(Energy, FEE_ID, Ch_ID, Time, Hits, HighE_veto, Side, Strip, EvtID, FastTime, AdcData, ScalerData, PauseResumeData);
 }
 //---------------------------------------------------------------
 
@@ -249,6 +249,7 @@ if(get_newfile()==1 || stats.MBSEvents==1){
     }
     Hits = 0;
     ScalerData.clear();
+    PauseResumeData.clear();
     while ((pdata - pdata_start) < (sub_evt_length)) // subevent loop
     {
 
@@ -425,6 +426,7 @@ bool AIDA_Detector_System::BuildAIDAInfoEvent(TGo4MbsSubEvent* psubevt, Int_t wo
     }
     upperTime48 = infoField;
     upperTime48_d[moduleNumber] = infoField;
+    PauseResumeData.emplace_back(moduleNumber, newtime, true);
   }
   // RESUME: End of deadtime, resync middle timestamp bits
   else if (infoCode == 3) {
@@ -445,6 +447,7 @@ bool AIDA_Detector_System::BuildAIDAInfoEvent(TGo4MbsSubEvent* psubevt, Int_t wo
     }
     upperTime48 = infoField;
     upperTime48_d[moduleNumber] = infoField;
+    PauseResumeData.emplace_back(moduleNumber, newtime, false);
   }
   // SYNC: Resync bits 48:28 of the timestamp
   else if (infoCode == 4)

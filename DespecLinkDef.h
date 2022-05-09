@@ -40,6 +40,8 @@
 #pragma link C++ class AidaHitPID+;
 #pragma link C++ class AidaScaler+;
 #pragma link C++ class vector<AidaScaler>+;
+#pragma link C++ class AidaPauseResume+;
+#pragma link C++ class vector<AidaPauseResume>+;
 #pragma link C++ class AidaUnpackData+;
 
 

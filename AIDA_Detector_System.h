@@ -47,6 +47,7 @@ private:
   int* EvtID;
   int* AdcData;
   std::vector<AidaScaler> ScalerData;
+  std::vector<AidaPauseResume> PauseResumeData;
 
   Int_t* pdata;
   Int_t* pdata_start;

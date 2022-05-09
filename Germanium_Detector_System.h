@@ -42,6 +42,19 @@ private:
     bool* Overflow;
     bool* Pileup;
     
+    int         l_cha_size;
+    int         l_trace_head;
+    int         l_trace_size;
+//     int         l_dat_fir[Germanium_TRACE_LENGTH/2];
+//     int         l_dat_sec[Germanium_TRACE_LENGTH/2];  
+    int         l_trace_trail;
+    int*        trace_channel_id;
+    int*        trace_board_id;
+    int**       l_dat_fir;
+    int**       l_dat_sec;
+    
+    int fired_FEBEX_traces;
+    
 
     std::map<std::pair<int,int>, std::pair<int,int>> Germanium_map;
     

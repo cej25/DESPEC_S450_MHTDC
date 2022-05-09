@@ -64,6 +64,11 @@
 
 using namespace std;
 
+// Beam Monitor global variables
+const Int_t BM_S2_MaxTdiffs = 300000;
+std::valarray<UInt_t>  BM_S2_Tdiffs(BM_S2_MaxTdiffs); 		// saves S2 time differences from get_BM_LDiff_S2 for online analysis
+const Int_t BM_S4_MaxTdiffs = 100000;
+std::valarray<UInt_t>  BM_S4_Tdiffs(BM_S4_MaxTdiffs); 		// saves S4 time differences from get_BM_LDiff_S4 for online analysis
 
 //***********************************************************
 EventUnpackProc::EventUnpackProc() :TGo4EventProcessor("Proc")
@@ -153,6 +158,7 @@ EventUnpackProc::EventUnpackProc(const char* name) : TGo4EventProcessor(name)
   fAida.Decays.clear();
   aida_scaler_cur_sec.clear();
   aida_scaler_queue.clear();
+  last_deadtime = 0;
   /// Setup AIDA arrays
   if(Used_Systems[1])
   {
@@ -250,8 +256,9 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
   isValid=kTRUE;
   event_number=fInput->GetCount();
   fOutput-> fevent_number = event_number;
- //cout<<"event_number " << event_number << endl;
+ 
   fOutput->fTrigger = fInput->GetTrigger();
+ //cout<<"event_number " << event_number <<  endl;
   fInput->ResetIterator();
   TGo4MbsSubEvent* psubevt(0);
 
@@ -261,11 +268,11 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
   // |               START OF EVENT ANALYSIS              | //
   // |                                                    | //
   // ------------------------------------------------------ //
-
- //if (event_number==95498){
+//cout<<"event_number " <<event_number << endl;
+ //if (event_number==113169311){
  if(true){
   //if (event_number==141513){
-//  cout<<"event " << event_number <<endl;
+  //cout<<"HITS ME  " << event_number <<endl;
 
       int subevent_iter = 0;
       Int_t PrcID_Conv = 0;
@@ -294,6 +301,8 @@ Bool_t EventUnpackProc::BuildEvent(TGo4EventElement* dest)
         if(PrcID_Conv==-1) continue;
 
         fOutput -> fProcID[PrcID_Conv] = PrcID_Conv;
+        
+      //  if(PrcID_Conv==5) cout<<fOutput->fTrigger;
 
         sub_evt_length  = (psubevt->GetDlen() - 2) / 2;
 
@@ -527,6 +536,8 @@ for (int i=0; i<10; i++){
           fOutput->fFRS_scaler[i] = frs_scaler_value[i];
           fOutput->fFRS_scaler_delta[i] = increase_scaler_temp[i];
         }
+        if (increase_scaler_temp[8] > 0) AIDA_DeadTime_OnSpill = true;
+        if (increase_scaler_temp[9] > 0) AIDA_DeadTime_OnSpill = false;
 
         //fOutput->fFRS_z3 = RAW->get_FRS_z3();
             ///ID Timestamp
@@ -744,7 +755,7 @@ for (int i=0; i<10; i++){
 ///--------------------------------------------------------------------------------------------///
                                                 /**Output bPlast Twin Peaks TAMEX **/
         ///--------------------------------------------------------------------------------------------///
-       if(bPLASTIC_TWINPEAKS==1){
+       //if(bPLASTIC_TWINPEAKS==1){
         int bPlasfired[9];
         int Phys_Channel_Lead_Fast_bPlast[bPLASTIC_TAMEX_MODULES][256];
         int Phys_Channel_Trail_Fast_bPlast[bPLASTIC_TAMEX_MODULES][256];
@@ -764,38 +775,31 @@ for (int i=0; i<10; i++){
                 bPlasfired[i] = RAW->get_bPLAST_TWINPEAKS_am_Fired(i);
 
         for(int j = 0;j < bPlasfired[i];j++){///Loop over hits per board
-               // cout<<"Input UNPACK RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) " <<RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) <<" RAW->get_bPLAST_TWINPEAKS_lead_T(i,j) " <<RAW->get_bPLAST_TWINPEAKS_lead_T(i,j) <<  " RAW->get_bPLAST_TWINPEAKS_trail_T(i,j) " <<RAW->get_bPLAST_TWINPEAKS_trail_T(i,j) << " i " << i << " j " << j <<  endl;
                 
                
-          ////NOW DEFINE FAST (ODD CHANNELS) AND SLOW  (EVEN)     
-              if(j % 2 == 0 ){ //Lead even hits
-               //  cout<<"RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j)  " <<RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j)  << endl;
+          ///NOW DEFINE FAST (ODD CHANNELS) AND SLOW  (EVEN)     
+           if(j % 2 == 0 ){ ///Lead even hits
+            
                   ///Fast lead channels odd
-                if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==1){
-                        if(RAW->get_bPLAST_TWINPEAKS_lead_T(i,j)>0){
-                Phys_Channel_Lead_Fast_bPlast[i][j] =TAMEX_bPlast_Chan[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1]; 
-               //cout<<"1 UNPACK Phys_Channel_Lead_Fast_bPlast[i][j] " <<Phys_Channel_Lead_Fast_bPlast[i][j] << " i " << i << " (RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2 " << (RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2 << " RAW->get_bPLAST_TWINPEAKS_lead_T(i,j) " <<RAW->get_bPLAST_TWINPEAKS_lead_T(i,j) << endl;
-               // cout<<" Phys_Channel_Lead_Fast_bPlast[i][j] " <<  Phys_Channel_Lead_Fast_bPlast[i][j] << " (RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2 " <<RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1/2 <<" i " << i << " j " << j << endl;
-                 bPlasdetnum_fast=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
-                  fOutput->fbPlasDetNum_Fast = bPlasdetnum_fast;
-               
-                 //    cout<<"bPlasdetnum_fast " <<bPlasdetnum_fast << " (RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j))/2 " <<(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j))/2 << " i " << i << " RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) " <<RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) << endl;
-               
+             if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==1){
+                     if(RAW->get_bPLAST_TWINPEAKS_lead_T(i,j)>0){
+                            Phys_Channel_Lead_Fast_bPlast[i][j] =TAMEX_bPlast_Chan[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1]; 
+             
+                        bPlasdetnum_fast=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
+                        fOutput->fbPlasDetNum_Fast = bPlasdetnum_fast;
 		     
-		  int chan_bPlast_fast_lead = Phys_Channel_Lead_Fast_bPlast[i][j];
+                        int chan_bPlast_fast_lead = Phys_Channel_Lead_Fast_bPlast[i][j];
 
-		    fOutput->fbPlas_FastChan[bPlasdetnum_fast] = chan_bPlast_fast_lead;
+                        fOutput->fbPlas_FastChan[bPlasdetnum_fast] = chan_bPlast_fast_lead;
    
-		  if(chan_bPlast_fast_lead>-1 && chan_bPlast_fast_lead<bPLASTIC_CHAN_PER_DET) {
+                    if(chan_bPlast_fast_lead>-1 && chan_bPlast_fast_lead<bPLASTIC_CHAN_PER_DET) {
   
-                    int N1_fast = fOutput->fbPlast_Fast_Lead_N[bPlasdetnum_fast][chan_bPlast_fast_lead]++;
+                        int N1_fast = fOutput->fbPlast_Fast_Lead_N[bPlasdetnum_fast][chan_bPlast_fast_lead]++;
           
-                    fOutput->fbPlast_Fast_Lead[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] = RAW->get_bPLAST_TWINPEAKS_lead_T(i,j);
-            //  cout<<"2 UNPACK EVENT " << event_number << " FAST bPlasdetnum_fast " << bPlasdetnum_fast << " chan_bPlast_fast_lead " << chan_bPlast_fast_lead << " N1_fast " <<N1_fast <<" fOutput->fbPlast_Fast_Lead[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] " <<fOutput->fbPlast_Fast_Lead[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] << " i " << i << " j " << j <<endl;       
-                    //cout<<"FAST LEAD RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) " << RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) << " chan_bPlast_fast_lead " <<chan_bPlast_fast_lead << " N1_fast " <<N1_fast << " fOutput->fbPlast_Lead_Fast[chan_bPlast_fast_lead][N1_fast]  " <<fOutput->fbPlast_Lead_Fast[chan_bPlast_fast_lead][N1_fast]  << " i " << i << " j " << j << endl;
-                }
+                        fOutput->fbPlast_Fast_Lead[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] = RAW->get_bPLAST_TWINPEAKS_lead_T(i,j);
+                           }
                         }
-            }
+                      }
                     ///Slow lead channels, even 
         if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==0){
                         
@@ -806,26 +810,19 @@ for (int i=0; i<10; i++){
                  bPlasdetnum_slow=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
                   fOutput->fbPlasDetNum_Slow = bPlasdetnum_slow;
     
-               //   cout<<"LEAD SLOW bPlasdetnum_slow " <<bPlasdetnum_slow << " chan_bPlast_slow_lead " <<chan_bPlast_slow_lead << endl;
-                     if(chan_bPlast_slow_lead>-1  && chan_bPlast_slow_lead<bPLASTIC_CHAN_PER_DET) {
-			fOutput->fbPlas_SlowChan[bPlasdetnum_slow] = chan_bPlast_slow_lead;
-             //  cout<<"fOutput->fbPlas_SlowChan[bPlasdetnum_slow] " <<fOutput->fbPlas_SlowChan[bPlasdetnum_slow] << " bPlasdetnum_slow " <<bPlasdetnum_slow << endl;
-                
-             
-       
+     
+                if(chan_bPlast_slow_lead>-1  && chan_bPlast_slow_lead<bPLASTIC_CHAN_PER_DET) {
+                    fOutput->fbPlas_SlowChan[bPlasdetnum_slow] = chan_bPlast_slow_lead;
+         
                     int N1_slow = fOutput->fbPlast_Slow_Lead_N[bPlasdetnum_fast][chan_bPlast_slow_lead]++;
           
                     fOutput->fbPlast_Slow_Lead[bPlasdetnum_fast][chan_bPlast_slow_lead][N1_slow] = RAW->get_bPLAST_TWINPEAKS_lead_T(i,j);
                     
-                   //  cout<<"FAST bPlasdetnum_slow " << bPlasdetnum_slow << " chan_bPlast_fast_lead " << chan_bPlast_slow_lead << " N1_fast " <<N1_fast <<" fOutput->fbPlast_Lead_Fast[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] " <<fOutput->fbPlast_Lead_Fast[bPlasdetnum_fast][chan_bPlast_fast_lead][N1_fast] << " i " << i << " j " << j <<endl;
-                    
-                   // cout<<"SLOW LEAD RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) " << RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) << " chan_bPlast_slow_lead " <<chan_bPlast_slow_lead << " N1_slow " <<N1_slow << " fOutput->fbPlast_Lead_Slow[chan_bPlast_slow_lead][N1_slow]  " <<fOutput->fbPlast_Lead_Slow[chan_bPlast_slow_lead][N1_slow]  << " i " << i << " j " << j << endl;
                             }
-                        
                     }
               }///End of lead hits
               
-               if(j % 2 == 1){ //TRAIL 
+               if(j % 2 == 1){ ///TRAIL 
                               ///Fast trail channels even
         if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==0 && (RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2<256){
                         
@@ -833,31 +830,23 @@ for (int i=0; i<10; i++){
                   
                 int chan_bPlast_fast_trail = Phys_Channel_Trail_Fast_bPlast[i][j];
 
-                 bPlasdetnum_fast=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
-               
-//cout<<"FAST CHAN " << Phys_Channel_Trail_Fast_bPlast[i][j]  << " bPlasdetnum_fast " <<bPlasdetnum_fast << endl;
-                // cout<<"TRAIL FAST bPlasdetnum_fast " <<bPlasdetnum_fast << " chan_bPlast_fast_trail " <<chan_bPlast_fast_trail << endl;
-                 
+                bPlasdetnum_fast=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
+
                 if(chan_bPlast_fast_trail>-1&& chan_bPlast_fast_trail<bPLASTIC_CHAN_PER_DET) {
             
-                    int N1_fast = fOutput->fbPlast_Fast_Trail_N[bPlasdetnum_fast][chan_bPlast_fast_trail]++;
+                 int N1_fast = fOutput->fbPlast_Fast_Trail_N[bPlasdetnum_fast][chan_bPlast_fast_trail]++;
           
-                    fOutput->fbPlast_Fast_Trail[bPlasdetnum_fast][chan_bPlast_fast_trail][N1_fast] = RAW->get_bPLAST_TWINPEAKS_trail_T(i,j);
-                  
-                    
-                  //  cout<<"FAST TRAIL RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) " << RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) << " chan_bPlast_fast_trail " <<chan_bPlast_fast_trail << " N1_fast " <<N1_fast << " fOutput->fbPlast_Trail_Fast[chan_bPlast_fast_trail][N1_fast]  " <<fOutput->fbPlast_Trail_Fast[chan_bPlast_fast_trail][N1_fast]  << " i " << i << " j " << j << endl;
+                 fOutput->fbPlast_Fast_Trail[bPlasdetnum_fast][chan_bPlast_fast_trail][N1_fast] = RAW->get_bPLAST_TWINPEAKS_trail_T(i,j);
             
-                        }
+                }
             }
           ///Slow trail channels even
-          if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==1 &&RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)<256){
+          if(RAW->get_bPLAST_TWINPEAKS_CH_ID(i,j) % 2==1 && RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)<256){
                         
                 Phys_Channel_Trail_Slow_bPlast[i][j] =TAMEX_bPlast_Chan[i][(RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2)-1]; 
                 
-                  bPlasdetnum_slow=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
-                  
-                 // cout<<"Phys_Channel_Trail_Slow_bPlast[i][j] " <<Phys_Channel_Trail_Slow_bPlast[i][j] << " RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1/2 " <<RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)/2-1 << " RAW " << RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) << endl; 
-                        //cout<<"SLOW CHAN " << Phys_Channel_Trail_Slow_bPlast[i][j]  << " bPlasdetnum_Slow " <<bPlasdetnum_slow << endl;
+                bPlasdetnum_slow=TAMEX_bPlast_Det[i][((RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j)+1)/2)-1];
+                 
                 int chan_bPlast_slow_trail = Phys_Channel_Trail_Slow_bPlast[i][j];
                          
                 if(chan_bPlast_slow_trail>-1&& chan_bPlast_slow_trail<bPLASTIC_CHAN_PER_DET) {
@@ -866,83 +855,75 @@ for (int i=0; i<10; i++){
           
                     fOutput->fbPlast_Slow_Trail[bPlasdetnum_slow][chan_bPlast_slow_trail][N1_slow] = RAW->get_bPLAST_TWINPEAKS_trail_T(i,j);
                     
-                  //    cout<<"TRAIL SLOW bPlasdetnum_slow " <<bPlasdetnum_slow << " chan_bPlast_slow_trail " <<chan_bPlast_slow_trail << endl;
-                    
-                    //cout<<"SLOW TRAIL RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) " << RAW->get_bPLAST_TWINPEAKS_physical_channel(i, j) << " chan_bPlast_slow_trail " <<chan_bPlast_slow_trail << " N1_slow " <<N1_slow << " fOutput->fbPlast_Trail_Slow[chan_bPlast_slow_trail][N1_slow]  " <<fOutput->fbPlast_Trail_Slow[chan_bPlast_slow_trail][N1_slow]  << " i " << i << " j " << j << endl;
             
-                                        }
-                                }
-                           }       
-                    }
-                }
-            }
-        }
+                                        } /// end if max channel condition 
+                                } /// End slow trail 
+                           }  /// End trail
+                    }/// End bPlast hits loop
+                } ///end tamex hits loop
+            } ///End proc ID 2
+       // }
         ///--------------------------------------------------------------------------------------------///
                                                 /**Output bPLASTIC TAMEX  **/
         ///--------------------------------------------------------------------------------------------///
-           if(bPLASTIC_TWINPEAKS==0){
-            int bPlasfired[3];
-            int Phys_Channel_Lead_bPlas[3][bPLASTIC_CHAN_PER_DET];
-            int Phys_Channel_Trail_bPlas[3][bPLASTIC_CHAN_PER_DET];
-            int N1 =0;
-            int bPlasdetnum=-1;
-
-        if (Used_Systems[2]&& PrcID_Conv==2){
-      // cout<<"Event " << event_number<<endl;
-       for (int i=0; i<RAW->get_PLASTIC_tamex_hits(); i++){///Loop over tamex ID's
-
-            int chan=-1;
-
-           //fOutput->fbPlas_TAMEX_ID = i;
-            bPlasfired[i] = RAW->get_PLASTIC_am_Fired(i); ///Iterator
-
-
-            //TAMEX_bPlast_Det[bPlastTamID][bPlastTamCh]
-
-
-            for(int j = 0;j < bPlasfired[i];j++){
-
-              if(RAW->get_PLASTIC_CH_ID(i,j) % 2 == 1){ //Lead odd j
-                  //Phys_Channel_Lead_bPlas[TAMID][Hit]
-                Phys_Channel_Lead_bPlas[i][j] = TAMEX_bPlast_Chan[i][RAW->get_PLASTIC_physical_channel(i, j)];
-                chan = (Phys_Channel_Lead_bPlas[i][j]);
-                if(chan>-1){
-                /// PMT allocation succeeded
-                bPlasdetnum=TAMEX_bPlast_Det[i][RAW->get_PLASTIC_physical_channel(i, j)];
-                fOutput->fbPlasDetNum = bPlasdetnum;
-                fOutput->fbPlasChan[bPlasdetnum]=  chan;
-                N1 = fOutput->fbPlas_PMT_Lead_N[bPlasdetnum][chan]++;
-
-
-               // cout<<"fOutput->fbPlasDetNum " <<fOutput->fbPlasDetNum << endl;
-// 		cout<<"Phys_Channel_Lead_bPlas[i][j] " <<Phys_Channel_Lead_bPlas[i][j] << " i " << i << " j " << j <<" RAW->get_PLASTIC_physical_channel(i, j) " <<RAW->get_PLASTIC_physical_channel(i, j) << endl;
-
-//         cout<<"bPlasdetnum " <<bPlasdetnum << " chan " << chan << " RAW->get_PLASTIC_physical_channel(i, j) " <<RAW->get_PLASTIC_physical_channel(i, j) << " fOutput->fbPlas_PMT_Lead_N[bPlasdetnum][chan] " <<fOutput->fbPlas_PMT_Lead_N[bPlasdetnum][chan] <<endl;
-		 if(N1>-1 && N1<bPLASTIC_TAMEX_HITS){
-
-               fOutput->fbPlas_Lead_PMT[bPlasdetnum][chan][N1] = RAW->get_PLASTIC_lead_T(i,j);
-//cout<<"fOutput->fbPlas_Lead_PMT[bPlasdetnum][chan][N1] " <<fOutput->fbPlas_Lead_PMT[bPlasdetnum][chan][N1] << " chan " << chan << " N1 " << N1 << endl;
-                    }
-                }
-              }
-               if(RAW->get_PLASTIC_CH_ID(i,j) % 2 == 0){ //Trail even j
-
-                Phys_Channel_Trail_bPlas[i][j] = TAMEX_bPlast_Chan[i][RAW->get_PLASTIC_physical_channel(i, j)];
-                chan = (Phys_Channel_Trail_bPlas[i][j]);
-
-               if(chan>-1){
-
-                /// PMT allocation succeeded
-                 N1 = fOutput->fbPlas_PMT_Trail_N[bPlasdetnum][chan]++;
-                if(N1>-1&& N1<bPLASTIC_TAMEX_HITS){
-             fOutput->fbPlas_Trail_PMT[bPlasdetnum][chan][N1] = RAW->get_PLASTIC_trail_T(i,j);
-                 }
-               }
-             }
-           }
-         }
-       }
-     }
+//            if(bPLASTIC_TWINPEAKS==0){
+//             int bPlasfired[3];
+//             int Phys_Channel_Lead_bPlas[3][bPLASTIC_CHAN_PER_DET];
+//             int Phys_Channel_Trail_bPlas[3][bPLASTIC_CHAN_PER_DET];
+//             int N1 =0;
+//             int bPlasdetnum=-1;
+// 
+//         if (Used_Systems[2]&& PrcID_Conv==2){
+//       // cout<<"Event " << event_number<<endl;
+//        for (int i=0; i<RAW->get_PLASTIC_tamex_hits(); i++){///Loop over tamex ID's
+// 
+//             int chan=-1;
+// 
+//            //fOutput->fbPlas_TAMEX_ID = i;
+//             bPlasfired[i] = RAW->get_PLASTIC_am_Fired(i); ///Iterator
+// 
+// 
+//             //TAMEX_bPlast_Det[bPlastTamID][bPlastTamCh]
+// 
+// 
+//             for(int j = 0;j < bPlasfired[i];j++){
+// 
+//               if(RAW->get_PLASTIC_CH_ID(i,j) % 2 == 1){ //Lead odd j
+//                   //Phys_Channel_Lead_bPlas[TAMID][Hit]
+//                 Phys_Channel_Lead_bPlas[i][j] = TAMEX_bPlast_Chan[i][RAW->get_PLASTIC_physical_channel(i, j)];
+//                 chan = (Phys_Channel_Lead_bPlas[i][j]);
+//                 if(chan>-1){
+//                 /// PMT allocation succeeded
+//                 bPlasdetnum=TAMEX_bPlast_Det[i][RAW->get_PLASTIC_physical_channel(i, j)];
+//                 fOutput->fbPlasDetNum = bPlasdetnum;
+//                 fOutput->fbPlasChan[bPlasdetnum]=  chan;
+//                 N1 = fOutput->fbPlas_PMT_Lead_N[bPlasdetnum][chan]++;
+// 
+// 
+//             if(N1>-1 && N1<bPLASTIC_TAMEX_HITS){
+// 
+//                fOutput->fbPlas_Lead_PMT[bPlasdetnum][chan][N1] = RAW->get_PLASTIC_lead_T(i,j);
+//                   }
+//                 }
+//               }
+//                if(RAW->get_PLASTIC_CH_ID(i,j) % 2 == 0){ //Trail even j
+// 
+//                 Phys_Channel_Trail_bPlas[i][j] = TAMEX_bPlast_Chan[i][RAW->get_PLASTIC_physical_channel(i, j)];
+//                 chan = (Phys_Channel_Trail_bPlas[i][j]);
+// 
+//                if(chan>-1){
+// 
+//                 /// PMT allocation succeeded
+//                  N1 = fOutput->fbPlas_PMT_Trail_N[bPlasdetnum][chan]++;
+//                 if(N1>-1&& N1<bPLASTIC_TAMEX_HITS){
+//              fOutput->fbPlas_Trail_PMT[bPlasdetnum][chan][N1] = RAW->get_PLASTIC_trail_T(i,j);
+//                  }
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
 
          ///--------------------------------------------------------------------------------------------///
                                                 /**Output FATIMA VME **/
@@ -1300,7 +1281,12 @@ for (int i=0; i<10; i++){
                 fOutput->fGe_Pileup[i] = RAW->get_Germanium_Pileup(i);
                 fOutput->fGe_Overflow[i] = RAW->get_Germanium_Overflow(i);
                 fOutput->fGe_fired++;
-
+                
+                
+                
+               //cout<<" get_Germanium_Trace_Length " <<RAW->get_Germanium_Trace_Length() << endl;
+               
+              
 
           }
         }
@@ -1831,28 +1817,28 @@ void EventUnpackProc::get_used_systems(){
 
     //ID
 
-    hID_AoQ = MakeTH1('D',"FRS/ID/ID_AoQ","ID_AoQ",2000,FRS_MIN_AoQ,FRS_MAX_AoQ,"A/Q S2-S4");
-    hID_AoQ_corr = MakeTH1('D',"FRS/ID/ID_AoQ_corr","ID_AoQ_corr",2000,FRS_MIN_AoQ,FRS_MAX_AoQ,"A/Q S2-S4");
+    hID_AoQ = MakeTH1('D',"FRS/ID/ID_AoQ","ID_AoQ",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
+    hID_AoQ_corr = MakeTH1('D',"FRS/ID/ID_AoQ_corr","ID_AoQ_corr",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
     
     
 
-    hID_AoQ_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_AoQ_mhtdc","ID_AoQ",2000,FRS_MIN_AoQ,FRS_MAX_AoQ,"A/Q S2-S4");
-    hID_AoQ_corr_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_AoQ_corr_mhtdc","ID_AoQ_corr",2000,FRS_MIN_AoQ,FRS_MAX_AoQ,"A/Q S2-S4");
+    hID_AoQ_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_AoQ_mhtdc","ID_AoQ",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
+    hID_AoQ_corr_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_AoQ_corr_mhtdc","ID_AoQ_corr",2000,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"A/Q S2-S4");
 
 
-//     hID_Z_AoQ_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_AoQ_mhtdc", "Z1 vs A/Q",1500,FRS_MIN_AoQ,FRS_MAX_AoQ, 1500,FRS_MIN_Z,FRS_MAX_Z,"A/Q s2-s4", "Z1 s2-s4");
+//     hID_Z_AoQ_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_AoQ_mhtdc", "Z1 vs A/Q",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z1 s2-s4");
 // 
-//     hID_Z_AoQ_corr_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z_AoQ_corr_mhtdc", "Z1 vs A/Q",1500,FRS_MIN_AoQ,FRS_MAX_AoQ, 1000,FRS_MIN_Z,FRS_MAX_Z,"A/Q s2-s4", "Z1 s2-s4");
+//     hID_Z_AoQ_corr_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z_AoQ_corr_mhtdc", "Z1 vs A/Q",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z1 s2-s4");
 
-  //  hID_Z_Z2_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_Z2_mhtdc","Z1 vs. Z2", 1000,FRS_MIN_Z,FRS_MAX_Z, 1000,FRS_MIN_Z,FRS_MAX_Z,"Z1", "Z2");
+  //  hID_Z_Z2_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_Z2_mhtdc","Z1 vs. Z2", 1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z1", "Z2");
 
   //   hID_Z = MakeH1I("ID",Form("ID_Z, gain=%f",music->e1_gain[0]),1000,10,93,"Z s2-s4",2,6);
-    hID_Z = MakeTH1('D',"FRS/ID/ID_Z1","ID_Z1",1000,FRS_MIN_Z,FRS_MAX_Z,"Z1 s2-s4");
-    hID_Z2 = MakeTH1('D',"FRS/ID/ID_Z2","ID_Z2",1000,FRS_MIN_Z,FRS_MAX_Z,"Z2 s2-s4");
+    hID_Z = MakeTH1('D',"FRS/ID/ID_Z1","ID_Z1",1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z1 s2-s4");
+    hID_Z2 = MakeTH1('D',"FRS/ID/ID_Z2","ID_Z2",1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z2 s2-s4");
 
-    hID_Z_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_Z1_mhtdc","ID_Z1",1000,FRS_MIN_Z,FRS_MAX_Z,"Z1 s2-s4");
+    hID_Z_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_Z1_mhtdc","ID_Z1",1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z1 s2-s4");
 
-    hID_Z2_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_Z2_mhtdc","ID_Z2",1000,FRS_MIN_Z,FRS_MAX_Z,"Z2 s2-s4");
+    hID_Z2_mhtdc = MakeTH1('D',"FRS/MHTDC/ID/ID_Z2_mhtdc","ID_Z2",1000,frs_id->min_z_plot,frs_id->max_z_plot,"Z2 s2-s4");
 
   
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2661,6 +2647,34 @@ for(int i=0; i<32; i++){
           2000, -32768, 32767
         );
       }
+
+    }
+
+    hAIDA_DeadTime.resize(conf->FEEs());
+    aida_deadtime_queue.resize(conf->FEEs());
+    aida_deadtime_pos.resize(conf->FEEs());
+    last_pauses.resize(conf->FEEs());
+    hAIDA_DeadTime_Spill = MakeTH1('I',
+        Form("AIDA/DeadTime/DeadTime_Spill"),
+        Form("Spill flag for AIDA dead time"),
+        6000, 0, 600, "Time before now (seconds)",
+        "On spill?"
+    );
+    hAIDA_DeadTime_Spill->SetLineColor(kRed);
+    aida_deadtime_spill_queue.resize(6000);
+    aida_deadtime_spill_pos = 0;
+    AIDA_DeadTime_OnSpill = false;
+    for (int i = 0; i < conf->FEEs(); i++)
+    {
+      aida_deadtime_queue[i].resize(6000);
+      aida_deadtime_pos[i] = 0;
+      last_pauses[i] = 0;
+      hAIDA_DeadTime[i] = MakeTH1('I',
+          Form("AIDA/DeadTime/DeadTime_Fee%d", i+1),
+          Form("FEE %d Dead Time", i+1),
+          6000, 0, 600, "Time before now (seconds)",
+          "Dead Time (%)"
+        );
     }
 
     for (int i = 0; i < conf->FEEs(); i++)
@@ -2725,7 +2739,10 @@ void EventUnpackProc::Fill_AIDA_Histos() {
       if (aida_scaler_cur_sec[i] != -1)
       {
         int diff = second - aida_scaler_cur_sec[i];
-        while (diff-- > 1) aida_scaler_queue[i].push_front(0);
+        if (diff > 3600)
+          aida_scaler_queue[i].clear();
+        else
+          while (diff-- > 1) aida_scaler_queue[i].push_front(0);
       }
       aida_scaler_queue[i].push_front(1);
       while (aida_scaler_queue[i].size() > 3600) aida_scaler_queue[i].pop_back();
@@ -2746,6 +2763,96 @@ void EventUnpackProc::Fill_AIDA_Histos() {
     {
         hAIDA_Scaler[scaler.first]->SetBinContent(i + 1, val);
         i++;
+    }
+  }
+
+  // Dead time calculation
+  if (AIDA_Hits == 0) return;
+
+  int64_t now = RAW->get_AIDA_WR(AIDA_Hits - 1);
+
+  if (now == 0) return;
+
+  bool redraw = false;
+
+  int64_t nowbin = now / 100000000ULL;
+  if (nowbin != last_deadtime && last_deadtime != 0)
+  {
+    int64_t diff = nowbin - last_deadtime;
+    while(diff-- > 0) {
+      for(size_t i = 0; i < aida_deadtime_queue.size(); i++) {
+          aida_deadtime_pos[i] += 1;
+          aida_deadtime_pos[i] %= aida_deadtime_queue[i].size();
+          aida_deadtime_queue[i][aida_deadtime_pos[i]] = 0;
+      }
+      aida_deadtime_spill_pos += 1;
+      aida_deadtime_spill_pos %= aida_deadtime_spill_queue.size();
+      aida_deadtime_spill_queue[aida_deadtime_spill_pos] = AIDA_DeadTime_OnSpill;
+    }
+    redraw = true;
+  }
+  last_deadtime = nowbin;
+
+  // Loop through deadtimes to get intervals
+  auto pare = RAW->get_AIDA_pr();
+  for (auto& i : pare)
+  {
+    if (i.Pause) {
+      last_pauses[i.Module] = i.Time;
+      continue;
+    }
+
+    if (last_pauses[i.Module] == 0) continue;
+    int64_t interval = i.Time - last_pauses[i.Module];
+
+    int64_t intervalbins = interval / 100000000ULL;
+
+
+    int64_t resbins = i.Time / 100000000ULL;
+    int64_t paubins = last_pauses[i.Module] / 100000000ULL;
+
+    int start = nowbin - resbins;
+    int pos = aida_deadtime_pos[i.Module];
+    int m = aida_deadtime_queue[i.Module].size();
+
+    if (intervalbins == 0)
+    {
+      double frac = (interval) / 1e8;
+      aida_deadtime_queue[i.Module][(start + pos) % m] += frac;
+    }
+    else
+    {
+      double start_frac = 1 - ((last_pauses[i.Module] - paubins*100000000ULL) / 1e8);
+      aida_deadtime_queue[i.Module][(start + intervalbins + pos) % m] += start_frac;
+      for(int j = 1; j < intervalbins; j++)
+      {
+        aida_deadtime_queue[i.Module][(start + j + pos) % m] = 1;
+      }
+      double end_frac = (i.Time - resbins*100000000ULL) / 1e8;
+      aida_deadtime_queue[i.Module][(start + pos) % m] += end_frac;
+    }
+    redraw = true;
+    last_pauses[i.Module] = 0;
+  }
+
+  if (redraw) {
+    for (int i = 0; i < conf->FEEs(); i++)
+    {
+      int pos = aida_deadtime_pos[i];
+      int m = aida_deadtime_queue[i].size();
+      for (int j = 0; j < m; j++)
+      {
+          double val = aida_deadtime_queue[i][(pos + m - j) % m];
+          hAIDA_DeadTime[i]->SetBinContent(j + 1, val*100);
+      }
+    }
+    int pos = aida_deadtime_spill_pos;
+    int m = aida_deadtime_spill_queue.size();
+    hAIDA_DeadTime_Spill->SetEntries(0);
+    for (int j = 0; j < m; j++)
+    {
+      double val = aida_deadtime_spill_queue[(pos + m -j) % m] ? 1 : 0;
+      hAIDA_DeadTime_Spill->SetBinContent(j + 1, val);
     }
   }
 }
@@ -2882,18 +2989,9 @@ void EventUnpackProc::Fill_FATIMA_Histos(EventUnpackStore* fOutput){
      if(detTDC<=FAT_MAX_VME_CHANNELS){
         FAT_T[detTDC] = (RAW->get_FAT_TDC_timestamp(i));
         hFAT_Traw_VME[detTDC]->Fill(FAT_T[detTDC]*25); //in ps
-//     if(detTDC==48)cout<<"FAT_T[detTDC] " <<FAT_T[detTDC] <<" detTDC " << detTDC<< endl;
+
                 }
          }
-  /**------------------Scaler TIMING -----------------------------------------**/
-//          Scaler_iterator = RAW->get_scaler_iterator();
-//
-//           for (int g=0; g<Scaler_iterator; g++){
-//               if(RAW->get_scaler_data(g)>0){
-//                 hScaler_hit_pattern->Fill(g);
-//                 cout<<"g " << g << endl;
-//            }
-//         }
     }
 
 
@@ -2903,9 +3001,21 @@ void EventUnpackProc::Fill_FATIMA_Histos(EventUnpackStore* fOutput){
 
 
 void EventUnpackProc::Make_Germanium_Histos(){
+    Text_t chis[256];
+    Text_t chead[256];
+    for(int i=0; i<Germanium_MAX_DETS;i++){
+        for(int j=0; j<Germanium_CRYSTALS;j++){
+              if(Germanium_TRACES_ACTIVE){
+                    sprintf(chis,"Germanium/Traces/Ge_Det: %2d Crystal: %2d", i,j);
+                    sprintf(chead,"Trace");
+                    h_trace[i][j] = MakeTH1('I', chis,chead,Germanium_TRACE_LENGTH,0,Germanium_TRACE_LENGTH);
+              }
+                    hGe_Raw_E[i][j] = MakeTH1('D',Form("Germanium/Raw/Germanium_Energy_Spectra/Germanium_Raw_E_Det:%2d_Crystal:%2d",i,j),Form("Germanium Energy Raw Det%2d Crystal%2d",i,j),5000,0,5000);
+                    
+        }
+    }
 //   for (int j; j<Germanium_MAX_HITS; j++){
-//         hGe_Raw_E[j] = MakeTH1('D',Form("Germanium/Raw/Germanium_Energy_Spectra/Germanium_Raw_E%2d",j),
-//                             Form("Germanium Channel Energy Channel Raw %2d",j),20000,0,20000);
+//       
 //
 //                     }
 //     hFebTime  = MakeTH1('D',"SysTime/FebexClock","Febex clock",200000,0,200000);
@@ -2913,16 +3023,24 @@ void EventUnpackProc::Make_Germanium_Histos(){
 /**----------------------------------------------------------------------------------------------**/                
 void EventUnpackProc::Fill_Germanium_Histos(){
 
-    double tmpGe[32];
-    int  Germanium_hits, GeID;
+    //double tmpGe[32];
+    int  Germanium_hits;
+    //GeID;
 
      /**------------------Germanium Raw Energy -----------------------------------------**/
       Germanium_hits = RAW->get_Germanium_am_Fired();
+      
          for(int i=0; i<Germanium_hits; i++){
-       if(RAW->get_Germanium_Det_id(i)>-1){
-         //  hFebTime->Fill(RAW->get_Germanium_Chan_T(i)*10E-9);
-         GeID = RAW->get_Germanium_Det_id(i) * 3 + RAW->get_Germanium_Crystal_id(i);
-        tmpGe[GeID] = RAW->get_Germanium_Chan_E(i);
+            if(RAW->get_Germanium_Det_id(i)>-1){
+               hGe_Raw_E[RAW->get_Germanium_Det_id(i)][RAW->get_Germanium_Crystal_id(i)]->Fill(RAW->get_Germanium_Chan_E(i));
+               
+          if(Germanium_TRACES_ACTIVE){
+            for(int l_l=0; l_l<RAW->get_Germanium_Trace_Length()/2; l_l++){
+                     
+                      h_trace[RAW->get_Germanium_Det_id(i)][RAW->get_Germanium_Crystal_id(i)]->SetBinContent (l_l*2  ,RAW->get_Germanium_Trace_First(i,l_l));
+                      h_trace[RAW->get_Germanium_Det_id(i)][RAW->get_Germanium_Crystal_id(i)]->SetBinContent (l_l*2+1,RAW->get_Germanium_Trace_Second(i,l_l));
+                  }
+             }
         }
      }
    }
@@ -2931,10 +3049,360 @@ void EventUnpackProc::Fill_Germanium_Histos(){
 /**----------------------------------------   Beam Monitor   -----------------------------------------**/
 /**----------------------------------------------------------------------------------------------**/
 void EventUnpackProc::Make_BeamMonitor_Histos(){
+	// set all counters to zero
+	BM_S2_count = 0;
+	BM_S2_QFcount = 0;
+	BM_S2_SumTdiff = 0;
+	BM_S4_count = 0;
+ 	BM_S4_QFcount = 0;
+	BM_S4_SumTdiff = 0;
+		
+ 	// S4
+ 	Text_t chis[256];
+  	Text_t chead[256];
+	
+	sprintf (chis,"BEAM_MONITOR/S4/NormalizedHitTimeDifferenceS4");
+	sprintf (chead,"S4 Normalized Hit Time Difference [100ns]");
+	hBM_s4h_norm_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S4/HitTimeDifferenceS4");
+	sprintf (chead,"S4 Hit Time Difference [100ns]");
+	hBM_s4h_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S4/HitTimesS4");
+	sprintf (chead,"S4 Hit Time [ms]: bins are 100us wide");
+	hBM_s4h_t1 = MakeTH1 ('D', chis, chead, BM_NBinsMax, 0, BM_NTimeMax);
+   	
+	sprintf (chis,"BEAM_MONITOR/S4/HitsPerSpillS4");
+	sprintf (chead,"S4 Hits per spill");	
+	hBM_s4h_n = MakeTH1 ('D', chis, chead, 600, 0, 6000);
+	
+	sprintf (chis,"BEAM_MONITOR/S4/PoissonS4");
+	sprintf (chead,"S4 Poisson");
+	hBM_s4h_poisson = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S4/CumulativeHitsS4");
+	sprintf (chead,"S4 Cumulative Hit Times [100ns]");
+	hBM_s4h_c = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S4/CumulativeHitDiffS4");
+	sprintf (chead,"S4 Deviation of Cumulative Hit Times [100ns]");
+	hBM_s4h_dc = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);	
+		
+	sprintf (chis,"BEAM_MONITOR/S4/CumulativePoissonS4");
+	sprintf (chead,"S4 Cumulative Poisson [100ns]");
+	hBM_s4h_cp = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
 
+	
+	gBM_s4gr_dt_avrg = MakeGraph("BEAM_MONITOR/S4/AverageTimeDifference","S4 Average Time Difference", 1,0,0);
+	gBM_s4gr_dt_avrg->GetXaxis()->SetTimeDisplay(1);
+	gBM_s4gr_dt_avrg->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s4gr_dt_avrg->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s4gr_dt_avrg->GetYaxis()->SetLimits(0,30);
+	gBM_s4gr_dt_avrg->GetYaxis()->SetTitle("t [us]");
+	gBM_s4gr_dt_avrg->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s4gr_dt_avrg->SetMarkerColor(kBlack);
+   	gBM_s4gr_dt_avrg->SetMarkerStyle(20);
+	gBM_s4gr_dt_avrg->SetLineColor(kBlue);
+   	gBM_s4gr_dt_avrg->SetLineWidth(2);
+   	gBM_s4gr_dt_avrg->GetXaxis()->SetNdivisions(-4);
+	gBM_s4gr_dt_avrg->Draw("APC");
+	
+	gBM_s4gr_qf = MakeGraph("BEAM_MONITOR/S4/QualityFactor","S4 Quality Factor",  1,0,0);
+	gBM_s4gr_qf->GetXaxis()->SetTimeDisplay(1);
+	gBM_s4gr_qf->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s4gr_qf->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s4gr_qf->GetYaxis()->SetLimits(-10,10);
+	gBM_s4gr_qf->GetYaxis()->SetTitle("QF");
+	gBM_s4gr_qf->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s4gr_qf->SetMarkerColor(kBlack);
+   	gBM_s4gr_qf->SetMarkerStyle(20);
+	gBM_s4gr_qf->SetLineColor(kBlue);
+   	gBM_s4gr_qf->SetLineWidth(2);
+   	gBM_s4gr_qf->GetXaxis()->SetNdivisions(-4);
+	gBM_s4gr_qf->Draw("APC");
+	
+	gBM_s4gr_dcmin = MakeGraph("BEAM_MONITOR/S4/LargestDeviationFromIdeal","S4 Largest Deviation From Ideal", 1,0,0);
+	gBM_s4gr_dcmin->GetXaxis()->SetTimeDisplay(1);
+	gBM_s4gr_dcmin->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s4gr_dcmin->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s4gr_dcmin->GetYaxis()->SetLimits(-1,0);
+	gBM_s4gr_dcmin->GetYaxis()->SetTitle("QF2");
+	gBM_s4gr_dcmin->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s4gr_dcmin->SetMarkerColor(kBlack);
+   	gBM_s4gr_dcmin->SetMarkerStyle(20);
+	gBM_s4gr_dcmin->SetLineColor(kBlue);
+   	gBM_s4gr_dcmin->SetLineWidth(2);
+   	gBM_s4gr_dcmin->GetXaxis()->SetNdivisions(-4);
+	gBM_s4gr_dcmin->Draw("APC");
+	
+	gBM_s4gr_dctime = MakeGraph("BEAM_MONITOR/S4/TimeDifferenceLargestDeviation","S4 Time Difference with the largest deviation [us]",  1,0,0);
+	gBM_s4gr_dctime->GetXaxis()->SetTimeDisplay(1);
+	gBM_s4gr_dctime->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s4gr_dctime->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s4gr_dctime->GetYaxis()->SetLimits(0,100);
+	gBM_s4gr_dctime->GetYaxis()->SetTitle("QF3 time [us]");
+	gBM_s4gr_dctime->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s4gr_dctime->SetMarkerColor(kBlack);
+   	gBM_s4gr_dctime->SetMarkerStyle(20);
+	gBM_s4gr_dctime->SetLineColor(kBlue);
+   	gBM_s4gr_dctime->SetLineWidth(2);
+   	gBM_s4gr_dctime->GetXaxis()->SetNdivisions(-4);
+	gBM_s4gr_dctime->Draw("APC");
+	
+	
+	// S2
+	
+	sprintf (chis,"BEAM_MONITOR/S2/NormalizedHitTimeDifferenceS2");
+	sprintf (chead,"S2 Normalized Hit Time Difference [100ns]");
+	hBM_s2h_norm_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S2/HitTimeDifferenceS2");
+	sprintf (chead,"S2 Hit Time Difference [100ns]");
+	hBM_s2h_tdiff = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S2/HitTimesS2");
+	sprintf (chead,"S2 Hit Time [ms]: bins are 100us wide");
+	hBM_s2h_t1 = MakeTH1 ('D', chis, chead, BM_NBinsMax, 0, BM_NTimeMax);
+   	
+	sprintf (chis,"BEAM_MONITOR/S2/HitsPerSpillS2");
+	sprintf (chead,"S2 Hits per spill");	
+	hBM_s2h_n = MakeTH1 ('D', chis, chead, 600, 0, 6000);
+	
+	sprintf (chis,"BEAM_MONITOR/S2/PoissonS2");
+	sprintf (chead,"S2 Poisson");
+	hBM_s2h_poisson = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S2/CumulativeHitsS2");
+	sprintf (chead,"S2 Cumulative Hit Times [100ns]");
+	hBM_s2h_c = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+	
+	sprintf (chis,"BEAM_MONITOR/S2/CumulativeHitDiffS2");
+	sprintf (chead,"S2 Deviation of Cumulative Hit Times [100ns]");
+	hBM_s2h_dc = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);	
+		
+	sprintf (chis,"BEAM_MONITOR/S2/CumulativePoissonS2");
+	sprintf (chead,"S2 Cumulative Poisson [100ns]");
+	hBM_s2h_cp = MakeTH1 ('D', chis, chead, BM_MaxTimeDiff, 0, BM_MaxTimeDiff);
+
+	
+	gBM_s2gr_dt_avrg = MakeGraph("BEAM_MONITOR/S2/AverageTimeDifference","S2 Average Time Difference", 1,0,0);
+	gBM_s2gr_dt_avrg->GetXaxis()->SetTimeDisplay(1);
+	gBM_s2gr_dt_avrg->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s2gr_dt_avrg->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s2gr_dt_avrg->GetYaxis()->SetLimits(0,30);
+	gBM_s2gr_dt_avrg->GetYaxis()->SetTitle("t [us]");
+	gBM_s2gr_dt_avrg->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s2gr_dt_avrg->SetMarkerColor(kBlack);
+   	gBM_s2gr_dt_avrg->SetMarkerStyle(20);
+	gBM_s2gr_dt_avrg->SetLineColor(kBlue);
+   	gBM_s2gr_dt_avrg->SetLineWidth(2);
+   	gBM_s2gr_dt_avrg->GetXaxis()->SetNdivisions(-4);
+	gBM_s2gr_dt_avrg->Draw("APC");
+	
+	gBM_s2gr_qf = MakeGraph("BEAM_MONITOR/S2/QualityFactor","S2 Quality Factor",  1,0,0);
+	gBM_s2gr_qf->GetXaxis()->SetTimeDisplay(1);
+	gBM_s2gr_qf->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s2gr_qf->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s2gr_qf->GetYaxis()->SetLimits(-10,10);
+	gBM_s2gr_qf->GetYaxis()->SetTitle("QF");
+	gBM_s2gr_qf->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s2gr_qf->SetMarkerColor(kBlack);
+   	gBM_s2gr_qf->SetMarkerStyle(20);
+	gBM_s2gr_qf->SetLineColor(kBlue);
+   	gBM_s2gr_qf->SetLineWidth(2);
+   	gBM_s2gr_qf->GetXaxis()->SetNdivisions(-4);
+	gBM_s2gr_qf->Draw("APC");
+	
+	gBM_s2gr_dcmin = MakeGraph("BEAM_MONITOR/S2/LargestDeviationFromIdeal","S2 Largest Deviation From Ideal", 1,0,0);
+	gBM_s2gr_dcmin->GetXaxis()->SetTimeDisplay(1);
+	gBM_s2gr_dcmin->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s2gr_dcmin->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s2gr_dcmin->GetYaxis()->SetLimits(-1,0);
+	gBM_s2gr_dcmin->GetYaxis()->SetTitle("QF2");
+	gBM_s2gr_dcmin->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s2gr_dcmin->SetMarkerColor(kBlack);
+   	gBM_s2gr_dcmin->SetMarkerStyle(20);
+	gBM_s2gr_dcmin->SetLineColor(kBlue);
+   	gBM_s2gr_dcmin->SetLineWidth(2);
+   	gBM_s2gr_dcmin->GetXaxis()->SetNdivisions(-4);
+	gBM_s2gr_dcmin->Draw("APC");
+	
+	gBM_s2gr_dctime = MakeGraph("BEAM_MONITOR/S2/TimeDifferenceLargestDeviation","S2 Time Difference with the largest deviation [us]",  1,0,0);
+	gBM_s2gr_dctime->GetXaxis()->SetTimeDisplay(1);
+	gBM_s2gr_dctime->GetXaxis()->SetTimeFormat("%Y-%m-%d %H:%M");
+	gBM_s2gr_dctime->GetXaxis()->SetTimeOffset(0,"local");
+	gBM_s2gr_dctime->GetYaxis()->SetLimits(0,100);
+	gBM_s2gr_dctime->GetYaxis()->SetTitle("QF3 time [us]");
+	gBM_s2gr_dctime->GetXaxis()->SetTitle("Time [Y-M-D H:M]");
+	gBM_s2gr_dctime->SetMarkerColor(kBlack);
+   	gBM_s2gr_dctime->SetMarkerStyle(20);
+	gBM_s2gr_dctime->SetLineColor(kBlue);
+   	gBM_s2gr_dctime->SetLineWidth(2);
+   	gBM_s2gr_dctime->GetXaxis()->SetNdivisions(-4);
+	gBM_s2gr_dctime->Draw("APC");
    }
    //-----------------------------------------------------------------------------------------------------------------------------//
 void EventUnpackProc::Fill_BeamMonitor_Histos(){
+	Int_t BM_Hits;
+	Double_t BM_CountRate;
+	Double_t BM_CR_timesum;
+	Int_t BM_CR_relevanthits;
+	Double_t BM_CR_Tlimit = pow(10,6); // in [100ns] units, insures that times between spills are not counted when computing count rate, should be much lower than the expected time between spills (for 1s off spill, 100ms or lower should be fine)
+	
+	Double_t BM_Tdiff_integral;
+	Double_t BM_dc_MinValue;
+	Int_t BM_dc_MinBin;
+		
+	Double_t BM_QF;
+	Double_t BM_Tmean;
+	
+	//S2:
+	BM_Hits = RAW->get_BM_Hits_S2();
+	for(Int_t i=0; i<BM_Hits; ++i) {
+
+		BM_S2_Tdiffs[BM_S2_count] = RAW->get_BM_LDiff_S2(i)/10; // save time diffs for analysis & change units from [10ns] to [100ns] 
+		
+		hBM_s2h_tdiff->Fill(BM_S2_Tdiffs[BM_S2_count]);
+		++BM_S2_count;
+		
+		if(BM_S2_count > BM_S2_MaxTdiffs) {
+			BM_S2_count = BM_S2_count % BM_S2_MaxTdiffs;	
+			}
+			
+		if(BM_S2_count % BM_S2_DoAnalysisEvery == 0) { // analysis of Tdiff data every BM_S2_DoAnalysisEvery number of hits
+			
+			BM_CR_timesum = 0;
+			BM_CR_relevanthits = 0;
+			
+			for(Int_t k=0; k<BM_S2_MaxTdiffs; ++k) {
+				if((Double_t) BM_S2_SumTdiff < (Double_t) BM_NTimeMax*pow(10,5)) {
+					BM_S2_SumTdiff += BM_S2_Tdiffs[ ( BM_S2_count + k ) % BM_S2_MaxTdiffs ];
+					hBM_s2h_t1->Fill((Double_t) BM_S2_SumTdiff*pow(10,-5));
+					} 
+				else {
+					hBM_s2h_t1->Reset("ICESM");
+					BM_S2_SumTdiff = 0;
+					}
+					
+				if(BM_S2_Tdiffs[k] < BM_CR_Tlimit) { 
+					BM_CR_timesum+=BM_S2_Tdiffs[k]; 
+					++BM_CR_relevanthits;
+					}
+				}
+				
+			BM_CountRate = (Double_t) BM_CR_relevanthits / BM_CR_timesum;
+			
+			BM_Tdiff_integral = hBM_s2h_tdiff->Integral(0, BM_MaxTimeDiff);
+			
+			for(Int_t j=0; j<BM_S2_MaxTdiffs; ++j) { 
+				hBM_s2h_norm_tdiff->SetBinContent(j, hBM_s2h_tdiff->GetBinContent(j) / BM_Tdiff_integral); 			// normalize hBM_s2h_tdiff
+				hBM_s2h_poisson->SetBinContent(j, exp(-BM_CountRate*((Double_t) j)) - exp(-BM_CountRate*((Double_t) j+1))); // get theoretical tdiffs from BM_CountRate
+				
+				// get cumulative histograms for measured, theoretical and their difference	
+				if(j==0) { 
+					hBM_s2h_c->SetBinContent(j,0);
+					hBM_s2h_cp->SetBinContent(j,0);
+					}
+				else {
+					hBM_s2h_c->SetBinContent(j,hBM_s2h_c->GetBinContent(j-1) + hBM_s2h_norm_tdiff->GetBinContent(j));
+					hBM_s2h_cp->SetBinContent(j,hBM_s2h_cp->GetBinContent(j-1) + hBM_s2h_poisson->GetBinContent(j));
+					}
+				hBM_s2h_dc->SetBinContent(j,hBM_s2h_cp->GetBinContent(j) - hBM_s2h_c->GetBinContent(j));
+				}
+			
+			BM_dc_MinBin = hBM_s2h_dc->GetMinimumBin();
+			BM_dc_MinValue = hBM_s2h_dc->GetBinContent(BM_dc_MinBin);
+			BM_Tmean =  hBM_s2h_norm_tdiff->GetMean();
+			
+			// compute quality factor
+			BM_QF = 100.0*(1.0 - (hBM_s2h_norm_tdiff->Integral(0, (Int_t) BM_Tmean) / hBM_s2h_poisson->Integral(0, (Int_t) BM_Tmean)));
+			
+			// get local time
+			time_t rawtime;
+			time(&rawtime);
+			
+			// add points to graphs
+			gBM_s2gr_qf->TGraph::SetPoint(BM_S2_QFcount, rawtime, BM_QF);
+			gBM_s2gr_dcmin->TGraph::SetPoint(BM_S2_QFcount, rawtime, BM_dc_MinValue);
+			gBM_s2gr_dctime->TGraph::SetPoint(BM_S2_QFcount,rawtime,BM_dc_MinBin/10);
+			gBM_s2gr_dt_avrg->TGraph::SetPoint(BM_S2_QFcount,rawtime,(Double_t) BM_Tmean/10.);
+			++BM_S2_QFcount;
+			}
+		}
+	//S4:
+	BM_Hits = RAW->get_BM_Hits_S4();
+	for(Int_t i=0; i<BM_Hits; ++i) {
+
+		BM_S4_Tdiffs[BM_S4_count] = RAW->get_BM_LDiff_S4(i)/10; // save time diffs for analysis & change units from [10ns] to [100ns] 
+		
+		hBM_s4h_tdiff->Fill(BM_S4_Tdiffs[BM_S4_count]);
+		++BM_S4_count;
+		
+		if(BM_S4_count > BM_S4_MaxTdiffs) {
+			BM_S4_count = BM_S4_count % BM_S4_MaxTdiffs;	
+			}
+			
+		if(BM_S4_count % BM_S4_DoAnalysisEvery == 0) { // analysis of Tdiff data every BM_S4_DoAnalysisEvery number of hits
+			
+			BM_CR_timesum = 0;
+			BM_CR_relevanthits = 0;
+			
+			for(Int_t k=0; k<BM_S4_MaxTdiffs; ++k) {
+				if((Double_t) BM_S4_SumTdiff < (Double_t) BM_NTimeMax*pow(10,5)) {
+					BM_S4_SumTdiff += BM_S4_Tdiffs[ ( BM_S4_count + k ) % BM_S4_MaxTdiffs ];
+					hBM_s4h_t1->Fill((Double_t) BM_S4_SumTdiff*pow(10,-5));
+					} 
+				else {
+					hBM_s4h_t1->Reset("ICESM");
+					BM_S4_SumTdiff = 0;
+					}
+										
+				if(BM_S4_Tdiffs[k] < BM_CR_Tlimit) { 
+					BM_CR_timesum+=BM_S4_Tdiffs[k]; 
+					++BM_CR_relevanthits;
+					}
+				}
+				
+			BM_CountRate = (Double_t) BM_CR_relevanthits / BM_CR_timesum;
+			
+			BM_Tdiff_integral = hBM_s4h_tdiff->Integral(0, BM_MaxTimeDiff);
+			
+			for(Int_t j=0; j<BM_S4_MaxTdiffs; ++j) { 
+				hBM_s4h_norm_tdiff->SetBinContent(j, hBM_s4h_tdiff->GetBinContent(j) / BM_Tdiff_integral); 			// normalize hBM_s4h_tdiff
+				hBM_s4h_poisson->SetBinContent(j, exp(-BM_CountRate*((Double_t) j)) - exp(-BM_CountRate*((Double_t) j+1))); // get theoretical tdiffs from BM_CountRate
+				
+				// get cumulative histograms for measured, theoretical and their difference	
+				if(j==0) { 
+					hBM_s4h_c->SetBinContent(j,0);
+					hBM_s4h_cp->SetBinContent(j,0);
+					}
+				else {
+					hBM_s4h_c->SetBinContent(j,hBM_s4h_c->GetBinContent(j-1) + hBM_s4h_norm_tdiff->GetBinContent(j));
+					hBM_s4h_cp->SetBinContent(j,hBM_s4h_cp->GetBinContent(j-1) + hBM_s4h_poisson->GetBinContent(j));
+					}
+				hBM_s4h_dc->SetBinContent(j,hBM_s4h_cp->GetBinContent(j) - hBM_s4h_c->GetBinContent(j));
+				}
+			
+			BM_dc_MinBin = hBM_s4h_dc->GetMinimumBin();
+			BM_dc_MinValue = hBM_s4h_dc->GetBinContent(BM_dc_MinBin);
+			BM_Tmean =  hBM_s4h_norm_tdiff->GetMean();
+			
+			// compute quality factor
+			BM_QF = 100.0*(1.0 - (hBM_s4h_norm_tdiff->Integral(0, (Int_t) BM_Tmean) / hBM_s4h_poisson->Integral(0, (Int_t) BM_Tmean)));
+			
+			// get local time
+			time_t rawtime;
+			time(&rawtime);
+			
+			// add point to graphs
+			gBM_s4gr_qf->TGraph::SetPoint(BM_S4_QFcount, rawtime, BM_QF);
+			gBM_s4gr_dcmin->TGraph::SetPoint(BM_S4_QFcount, rawtime, BM_dc_MinValue);
+			gBM_s4gr_dctime->TGraph::SetPoint(BM_S4_QFcount,rawtime,BM_dc_MinBin/10);
+			gBM_s4gr_dt_avrg->TGraph::SetPoint(BM_S4_QFcount,rawtime,(Double_t) BM_Tmean/10.);
+			++BM_S4_QFcount;
+			}
+		}
     
 }
 

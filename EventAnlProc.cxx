@@ -97,136 +97,146 @@ void EventAnlProc::UserPostLoop()
 //-----------------------------------------------------------
 
 
-Bool_t EventAnlProc::BuildEvent(TGo4EventElement* dest){
-    for(int i=0; i<7; i++){
+Bool_t EventAnlProc::BuildEvent(TGo4EventElement* dest)
+{
+     for(int i=0; i<7; i++){
         PrcID_Conv[i]=-1;
-    }
+        }
 
-    Bool_t isValid=kFALSE; // validity of output event
+  Bool_t isValid=kFALSE; // validity of output event
 
-    EventUnpackStore* pInput  = (EventUnpackStore*) GetInputEvent();
-    EventAnlStore* pOutput = (EventAnlStore*) dest;
+  EventUnpackStore* pInput  = (EventUnpackStore*) GetInputEvent();
+  EventAnlStore* pOutput = (EventAnlStore*) dest;
 
-    // pAida.Implants.clear();
-    // pAida.Decays.clear();
+//   pAida.Implants.clear();
+//   pAida.Decays.clear();
 
-    if((pInput==0) || !pInput->IsValid()){ // input invalid
-        pOutput->SetValid(isValid); // invalid
-        return isValid; // must be same is for SetValid
-    }
-    isValid=kTRUE;
 
-    //general inputs from the unpacker
+  if((pInput==0) || !pInput->IsValid()){ // input invalid
+    pOutput->SetValid(isValid); // invalid
+    return isValid; // must be same is for SetValid
+  }
+  isValid=kTRUE;
+
+   ///general inputs from the unpacker
     event_number = pInput->fevent_number;
     pOutput->pOnSpill = FRS_spill;
     pOutput->pTrigger = pInput->fTrigger;
     pOutput->pEvent_Number = event_number;
-    // VMEorTAMEX_bPlas = VME_TAMEX_bPlas;
-    // VMEorTAMEX_fatima = VME_TAMEX_Fatima;
-    // VMEandTAMEX_fatima = VME_AND_TAMEX_Fatima;
+//     VMEorTAMEX_bPlas = VME_TAMEX_bPlas;
+//     VMEorTAMEX_fatima = VME_TAMEX_Fatima;
+//     VMEandTAMEX_fatima = VME_AND_TAMEX_Fatima;
 
 
-    for (int i = 0; i<7; i++){
-        if(pInput->fProcID[i]>-1){
-            PrcID_Conv[i] = pInput->fProcID[i];
-            pOutput->pPrcID_Conv[i] = pInput->fProcID[i];
+  for (int i = 0; i<7; i++){
+      if(pInput->fProcID[i]>-1){
+      PrcID_Conv[i] = pInput->fProcID[i];
+      pOutput->pPrcID_Conv[i] = pInput->fProcID[i];
+    }
+
+  }
+
+
+   static bool create =false;
+  //Create histograms
+  if (!create)
+  {
+    Make_WR_Histos();
+    if(Used_Systems[0])  Make_FRS_Histos();
+    if(Used_Systems[1])  Make_Aida_Histos();
+    //if(Used_Systems[2] && bPLASTIC_TWINPEAKS==0)  Make_Plastic_Tamex_Histos();
+    if(Used_Systems[2] && bPLASTIC_TWINPEAKS==1)  Make_Plastic_Twinpeaks_Histos();
+    if(Used_Systems[3]) Make_Fatima_Histos();
+    if(Used_Systems[4]) Make_Fatima_Tamex_Histos();
+    if(Used_Systems[5]) Make_Germanium_Histos();
+    //if (Used_Systems[6]) Make_Finger_Histos();
+
         }
-    }
 
-    static bool create =false;
-    //Create histograms
-    if (!create){
-        Make_WR_Histos();
-        if(Used_Systems[0])  Make_FRS_Histos();
-        if(Used_Systems[1])  Make_Aida_Histos();
-        if(Used_Systems[2] && bPLASTIC_TWINPEAKS==0)  Make_Plastic_Tamex_Histos();
-        if(Used_Systems[2] && bPLASTIC_TWINPEAKS==1)  Make_Plastic_Twinpeaks_Histos();
-        if(Used_Systems[3]) Make_Fatima_Histos();
-        if(Used_Systems[4]) Make_Fatima_Tamex_Histos();
-        if(Used_Systems[5]) Make_Germanium_Histos();
-        //if (Used_Systems[6]) Make_Finger_Histos();
+        create = true;
+        Process_WR_Histos(pInput);
+        Fat_TimeCorrection(pInput);
+                 /** Now extract the data from the stored Unpacker array (root tree)**/
+    ///--------------------------------------/**FRS Input**/------------------------------------------///
 
-    }
 
-    create = true;
-    Process_WR_Histos(pInput);
-    Fat_TimeCorrection(pInput);
-
-    /** Now extract the data from the stored Unpacker array (root tree)**/
-    //--------------------------------------/**FRS Input**/------------------------------------------///
-
-    if (PrcID_Conv[0]==0 && Used_Systems[0]==1){
+      if (PrcID_Conv[0]==0 && Used_Systems[0]==1){
         for(int i=0; i<10; i++){
-            FRS_AoQ_corr_mhtdc[i]=0;
-            FRS_z_mhtdc[i]=0;
-            FRS_z2_mhtdc[i]=0;
-            FRS_AoQ_mhtdc[i]=0;
+        FRS_AoQ_corr_mhtdc[i]=0;
+        FRS_z_mhtdc[i]=0;
+        FRS_z2_mhtdc[i]=0;
+        FRS_AoQ_mhtdc[i]=0;
         }
-        pOutput->pFRS_WR = pInput->fFRS_WR;
-        //MUSIC
-        //        for(int i =0; i<2; ++i){
-        //             FRS_dE[i] = pInput->fFRS_Music_dE[i];
-        //             FRS_dE_cor[i] = pInput->fFRS_Music_dE_corr[i];
-        //            }
+          pOutput->pFRS_WR = pInput->fFRS_WR;
+        ///MUSIC
+//        for(int i =0; i<2; ++i){
+//             FRS_dE[i] = pInput->fFRS_Music_dE[i];
+//             FRS_dE_cor[i] = pInput->fFRS_Music_dE_corr[i];
+//            }
 
-        //SCI
+          ///SCI
         for(int l=0;l<12;++l){
-            FRS_sci_l[l] = pInput->fFRS_sci_l[l];
-            //if(pInput->fFRS_sci_l[l]!=0)cout<<"pInput->fFRS_sci_l[l] " << pInput->fFRS_sci_l[l] <<" l " << l << endl;
-            FRS_sci_r[l] = pInput->fFRS_sci_r[l];
-            FRS_sci_e[l] = pInput->fFRS_sci_e[l];
-            FRS_sci_tx[l] = pInput->fFRS_sci_tx[l];
-            FRS_sci_x[l] = pInput->fFRS_sci_x[l];
+
+           FRS_sci_l[l] = pInput->fFRS_sci_l[l];
+           //if(pInput->fFRS_sci_l[l]!=0)cout<<"pInput->fFRS_sci_l[l] " << pInput->fFRS_sci_l[l] <<" l " << l << endl;
+           FRS_sci_r[l] = pInput->fFRS_sci_r[l];
+           FRS_sci_e[l] = pInput->fFRS_sci_e[l];
+           FRS_sci_tx[l] = pInput->fFRS_sci_tx[l];
+           FRS_sci_x[l] = pInput->fFRS_sci_x[l];
+
         }
-        //VFTX
-        for(int i=0; i<32; i++){
-            pOutput->pTRaw_vftx_21l[i] = pInput->fTRaw_vftx_21l[i];
-            pOutput->pTRaw_vftx_21r[i] = pInput->fTRaw_vftx_21r[i];
-            pOutput->pTRaw_vftx_22l[i] = pInput->fTRaw_vftx_22l[i];
-            pOutput->pTRaw_vftx_22r[i] = pInput->fTRaw_vftx_22r[i];
-            pOutput->pTRaw_vftx_41l[i] = pInput->fTRaw_vftx_41l[i];
-            pOutput->pTRaw_vftx_41r[i] = pInput->fTRaw_vftx_41r[i];
-            pOutput->pTRaw_vftx_42l[i] = pInput->fTRaw_vftx_42l[i];
-            pOutput->pTRaw_vftx_42r[i] = pInput->fTRaw_vftx_42r[i];
+        ///VFTX
+        for(int i = 0; i < 32; i++){
+        pOutput->pTRaw_vftx_21l[i] = pInput->fTRaw_vftx_21l[i];
+        pOutput->pTRaw_vftx_21r[i] = pInput->fTRaw_vftx_21r[i];
+        pOutput->pTRaw_vftx_22l[i] = pInput->fTRaw_vftx_22l[i];
+        pOutput->pTRaw_vftx_22r[i] = pInput->fTRaw_vftx_22r[i];
+        pOutput->pTRaw_vftx_41l[i] = pInput->fTRaw_vftx_41l[i];
+        pOutput->pTRaw_vftx_41r[i] = pInput->fTRaw_vftx_41r[i];
+        pOutput->pTRaw_vftx_42l[i] = pInput->fTRaw_vftx_42l[i];
+        pOutput->pTRaw_vftx_42r[i] = pInput->fTRaw_vftx_42r[i];
         }
 
-        //TPC
-        for(int i=0; i<7; i++){
-            pOutput->pFRS_tpc_x[i] = pInput->fFRS_TPC_x[i];
-            pOutput->pFRS_tpc_y[i] = pInput->fFRS_TPC_y[i];
+        ///TPC
+        for(int i = 0; i < 7; i++)
+        {
+          pOutput->pFRS_tpc_x[i] = pInput->fFRS_TPC_x[i];
+          pOutput->pFRS_tpc_y[i] = pInput->fFRS_TPC_y[i];
         }
 
-        //Scaler
-        for (int i = 0; i < 64; i++){
-            pOutput->pFRS_scaler[i] = pInput->fFRS_scaler[i];
-            pOutput->pFRS_scaler_delta[i] = pInput->fFRS_scaler_delta[i];
+        ///Scaler
+            for (int i = 0; i < 64; i++)
+        {
+          pOutput->pFRS_scaler[i] = pInput->fFRS_scaler[i];
+          pOutput->pFRS_scaler_delta[i] = pInput->fFRS_scaler_delta[i];
         }
-        if (pOutput->pFRS_scaler_delta[8] > 0){
-
-            FRS_spill = true;
-            pOutput->pOnSpill = true;
-	        // cout<<"OnSpill " <<pOutput->pOnSpill << endl;
+        if (pOutput->pFRS_scaler_delta[8] > 0)
+        {
+          FRS_spill = true;
+          pOutput->pOnSpill = true;
+	 // cout<<"OnSpill " <<pOutput->pOnSpill << endl;
         }
-        if (pOutput->pFRS_scaler_delta[9] > 0){
-            FRS_spill = false;
-            pOutput->pOnSpill = false;
-	        // cout<<"Offspill " <<pOutput->pOnSpill << endl;
-        }
-
-        //MUSIC
-        for(int i=0; i<2; ++i){
-            pOutput->pFRS_Music_dE[i] = pInput->fFRS_Music_dE[i];
+        if (pOutput->pFRS_scaler_delta[9] > 0)
+        {
+          FRS_spill = false;
+          pOutput->pOnSpill = false;
+	  // cout<<"Offspill " <<pOutput->pOnSpill << endl;
         }
 
+        ///MUSIC
+        for(int i =0; i<2; ++i){
+        pOutput->pFRS_Music_dE[i] = pInput->fFRS_Music_dE[i];
+        }
 
-        // SCI TOF
-        // FRS_sci_tofll2 = pInput->fFRS_sci_tofll2;
-        // FRS_sci_tofll3 = pInput->fFRS_sci_tofll3;
-        FRS_sci_tof2 = pInput->fFRS_sci_tof2;
-        // FRS_sci_tofrr2 = pInput->fFRS_sci_tofrr2;
-        // FRS_sci_tofrr3 = pInput->fFRS_sci_tofrr3;
-        // FRS_sci_tof3 = pInput->fFRS_sci_tof3;
-        // ID 2 4
+
+        ///SCI TOF
+       // FRS_sci_tofll2 = pInput->fFRS_sci_tofll2;
+       // FRS_sci_tofll3 = pInput->fFRS_sci_tofll3;
+          FRS_sci_tof2 = pInput->fFRS_sci_tof2;
+       // FRS_sci_tofrr2 = pInput->fFRS_sci_tofrr2;
+        //FRS_sci_tofrr3 = pInput->fFRS_sci_tofrr3;
+      //  FRS_sci_tof3 = pInput->fFRS_sci_tof3;
+        ///ID 2 4
         FRS_ID_x2 = pInput->fFRS_ID_x2;
         FRS_ID_y2 = pInput->fFRS_ID_y2;
         FRS_ID_a2 = pInput->fFRS_ID_a2;
@@ -236,27 +246,27 @@ Bool_t EventAnlProc::BuildEvent(TGo4EventElement* dest){
         FRS_ID_y4 = pInput->fFRS_ID_y4;
         FRS_ID_a4 = pInput->fFRS_ID_a4;
         FRS_ID_b4 = pInput->fFRS_ID_b4;
-        //SCI dT
-        //         FRS_sci_dt_21l_21r = pInput->fFRS_sci_dt_21l_21r;
-        //         FRS_sci_dt_41l_41r = pInput->fFRS_sci_dt_41l_41r;
-        //         FRS_sci_dt_42l_42r = pInput->fFRS_sci_dt_42l_42r;
-        //         FRS_sci_dt_43l_43r = pInput->fFRS_sci_dt_43l_43r;
-        //
-        //         FRS_sci_dt_21l_41l = pInput->fFRS_sci_dt_21l_41l;
-        //         FRS_sci_dt_21r_41r = pInput->fFRS_sci_dt_21r_41r;
-        //
-        //         FRS_sci_dt_21l_42l = pInput->fFRS_sci_dt_21l_42l;
-        //         FRS_sci_dt_21r_42r = pInput->fFRS_sci_dt_21r_42r;
-        // ID Beta Rho
-        //         for(int i =0; i<2; ++i){
-        //        // FRS_ID_brho[i] = pInput->fFRS_ID_brho[i];
-        //       //  FRS_ID_rho[i] = pInput->fFRS_ID_rho[i];
-        //         }
+            ///SCI dT
+//         FRS_sci_dt_21l_21r = pInput->fFRS_sci_dt_21l_21r;
+//         FRS_sci_dt_41l_41r = pInput->fFRS_sci_dt_41l_41r;
+//         FRS_sci_dt_42l_42r = pInput->fFRS_sci_dt_42l_42r;
+//         FRS_sci_dt_43l_43r = pInput->fFRS_sci_dt_43l_43r;
+//
+//         FRS_sci_dt_21l_41l = pInput->fFRS_sci_dt_21l_41l;
+//         FRS_sci_dt_21r_41r = pInput->fFRS_sci_dt_21r_41r;
+//
+//         FRS_sci_dt_21l_42l = pInput->fFRS_sci_dt_21l_42l;
+//         FRS_sci_dt_21r_42r = pInput->fFRS_sci_dt_21r_42r;
+            ///ID Beta Rho
+//         for(int i =0; i<2; ++i){
+//        // FRS_ID_brho[i] = pInput->fFRS_ID_brho[i];
+//       //  FRS_ID_rho[i] = pInput->fFRS_ID_rho[i];
+//         }
 
-        //         FRS_beta3 = pInput->fFRS_beta3;
-        //  FRS_gamma  = pInput->fFRS_gamma;
-        //ID Z AoQ
-        // if(MHTDC_OR_TAC==0){
+//         FRS_beta3 = pInput->fFRS_beta3;
+      //  FRS_gamma  = pInput->fFRS_gamma;
+            ///ID Z AoQ
+       // if(MHTDC_OR_TAC==0){
         FRS_AoQ = pInput->fFRS_AoQ;
         FRS_AoQ_corr = pInput->fFRS_AoQ_corr;
         FRS_z = pInput->fFRS_z;
@@ -265,329 +275,330 @@ Bool_t EventAnlProc::BuildEvent(TGo4EventElement* dest){
         FRS_dEdegoQ = pInput->fFRS_dEdegoQ;
         FRS_beta = pInput->fFRS_beta;
         //}
-        //        else if (MHTDC_OR_TAC==1){
-        for (int i=0; i<10; i++){
-            FRS_AoQ_mhtdc[i] = pInput->fFRS_AoQ_mhtdc[i];
-            // cout<<"pInput->fFRS_AoQ_mhtdc[i]" << pInput->fFRS_AoQ_mhtdc[i]   << endl;
-            FRS_AoQ_corr_mhtdc[i] = pInput->fFRS_AoQ_corr_mhtdc[i];
-            FRS_z_mhtdc[i] = pInput->fFRS_z_mhtdc[i];
-            FRS_z2_mhtdc[i] = pInput->fFRS_z2_mhtdc[i];
-            FRS_dEdeg_mhtdc[i] = pInput->fFRS_dEdeg_mhtdc[i];
-            FRS_dEdegoQ_mhtdc[i] = pInput->fFRS_dEdegoQ_mhtdc[i];
-            FRS_beta_mhtdc[i] = pInput->fFRS_beta_mhtdc[i];
+//        else if (MHTDC_OR_TAC==1){
+          for (int i=0; i<10; i++){
+        FRS_AoQ_mhtdc[i] = pInput->fFRS_AoQ_mhtdc[i];
+       // cout<<"pInput->fFRS_AoQ_mhtdc[i]" << pInput->fFRS_AoQ_mhtdc[i]   << endl;
+        FRS_AoQ_corr_mhtdc[i] = pInput->fFRS_AoQ_corr_mhtdc[i];
+        FRS_z_mhtdc[i] = pInput->fFRS_z_mhtdc[i];
+        FRS_z2_mhtdc[i] = pInput->fFRS_z2_mhtdc[i];
+        FRS_dEdeg_mhtdc[i] = pInput->fFRS_dEdeg_mhtdc[i];
+        FRS_dEdegoQ_mhtdc[i] = pInput->fFRS_dEdegoQ_mhtdc[i];
+        FRS_beta_mhtdc[i] = pInput->fFRS_beta_mhtdc[i];
 
-            //   fFRS_tof4121_mhtdc[i]
+     //   fFRS_tof4121_mhtdc[i]
 
-        }
-        // }
-        //else {cout<<"TOF vs TAC Parameter not set correctly in DESPEC_Setup_File.h"<<endl; exit(0);}
-        //  FRS_AoQ_mhtdc = pInput->fFRS_AoQ_mhtdc;
-        //  FRS_AoQ_corr_mhtdc = pInput->fFRS_AoQ_corr_mhtdc;   /Elif
-        //  FRS_z_mhtdc = pInput->fFRS_z_mhtdc;
-        //  FRS_z2_mhtdc = pInput->fFRS_z2_mhtdc;
-        //  FRS_dEdeg_mhtdc = pInput->fFRS_dEdeg_mhtdc;
-        //  FRS_dEdegoQ_mhtdc = pInput->fFRS_dEdegoQ_mhtdc;
-        //  FRS_beta_mhtdc = pInput->fFRS_beta_mhtdc;
-        // FRS_z3 = pInput->fFRS_z3;
-        //ID Timestamp
-        // FRS_timestamp = pInput->fFRS_timestamp;
-        //         FRS_ts = pInput->fFRS_ts;
-        //         FRS_ts2 = pInput->fFRS_ts2;
-        // if(pOutput->pEvent_Number==42715 ){       }
+      }
+       // }
+       //else {cout<<"TOF vs TAC Parameter not set correctly in DESPEC_Setup_File.h"<<endl; exit(0);}
+      //  FRS_AoQ_mhtdc = pInput->fFRS_AoQ_mhtdc;
+      //  FRS_AoQ_corr_mhtdc = pInput->fFRS_AoQ_corr_mhtdc;   /Elif
+      //  FRS_z_mhtdc = pInput->fFRS_z_mhtdc;
+      //  FRS_z2_mhtdc = pInput->fFRS_z2_mhtdc;
+      //  FRS_dEdeg_mhtdc = pInput->fFRS_dEdeg_mhtdc;
+      //  FRS_dEdegoQ_mhtdc = pInput->fFRS_dEdegoQ_mhtdc;
+      //  FRS_beta_mhtdc = pInput->fFRS_beta_mhtdc;
+       // FRS_z3 = pInput->fFRS_z3;
+            ///ID Timestamp
+       // FRS_timestamp = pInput->fFRS_timestamp;
+//         FRS_ts = pInput->fFRS_ts;
+//         FRS_ts2 = pInput->fFRS_ts2;
+ // if(pOutput->pEvent_Number==42715 ){       }
         Process_FRS_Histos(pInput, pOutput);
-    }
+            }
 
 
-    //-------------------------------- /**AIDA Input**/ --------------------------------///
-    //  if (Used_Systems[1]&&  PrcID_Conv[1]==1) {ProcessAida(pInput);}
-    if (Used_Systems[1]&&  PrcID_Conv[1]==1){
+   ///-------------------------------- /**AIDA Input**/ --------------------------------///
+      //  if (Used_Systems[1]&&  PrcID_Conv[1]==1) {ProcessAida(pInput);}
+      if (Used_Systems[1]&&  PrcID_Conv[1]==1){
         ProcessAida(pInput, pOutput);
         Aida_Fired = 0;
         Aida_Fired = pInput->fAIDAHits;
         pOutput->pAidaScalers = pInput->fAidaScalers;
-     }
-     //-------------------------------- /**bPlastic VME Input**/ --------------------------------///
-     //Disabled A.M. 11.12.19
+      }
+   ///-------------------------------- /**bPlastic VME Input**/ --------------------------------///
+        ///Disabled A.M. 11.12.19
 
-     //--------------------------------------/**bPlastic TAMEX Input**/------------------------------------------///
-
-     if (PrcID_Conv[2] ==2 && Used_Systems[2]==1 && bPLASTIC_TWINPEAKS==0){
+///--------------------------------------/**bPlastic TAMEX Input**/------------------------------------------///
 
 
-         for(int i=0; i<bPLASTIC_TAMEX_HITS; i++){
-             bPlas_RefCh0_Det1[i] =0;
-             bPlas_RefCh0_Det2[i] =0;
-             // bPlas_RefCh0_Det3[i] =0;
+//   if (PrcID_Conv[2] ==2 && Used_Systems[2]==1 && bPLASTIC_TWINPEAKS==0){
+//
+//       for(int i=0; i<bPLASTIC_TAMEX_HITS; i++){
+//          bPlas_RefCh0_Det1[i] =0;
+//          bPlas_RefCh0_Det2[i] =0;
+//         // bPlas_RefCh0_Det3[i] =0;
+//          }
+//           for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++)
+//                 {
+//                     for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
+//                         lead_lead_bplas_Ref1[j][k]=0;
+//                         lead_lead_bplas_Ref2[j][k]=0;
+//                         lead_lead_fat_Ref0[j][k]=0;
+//                     }
+//                 }
+//
+//          for (int i=1; i<4; i++){
+//             for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++)
+//                 {
+//                     for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
+//                  SC41L_ANA_lead_bPlas[i][j][k] = 0;
+//                  SC41R_ANA_lead_bPlas[i][j][k] = 0;
+//                  SC41L_DIG_lead_bPlas[i][j][k] = 0;
+//                  SC41R_DIG_lead_bPlas[i][j][k] = 0;
+//                     }
+//                 }
+//             }
+//
+//                 pOutput->pbPLAS_WR = pInput->fbPlas_WR;
+//
+//                 bPlas_TAM_FATTAM = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATTAMEX][0];
+//                 bPlas_TAM_FATVME = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATVME][0];
+//                 bPlas_TAM_SC41L_DIG = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][SC41L_bPLASTIC][0];
+//                 bPlas_TAM_SC41R_DIG = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][SC41R_bPLASTIC][0];
+//
+//        ///bPlas_AND_Coinc[j] = pInput->fFat_Lead_PMT[9][j];
+//
+//   // if(pOutput->pEvent_Number==100598)
+//      for(int i=1; i<4; i++){ ///Detector number
+//                  for (int j = 0; j <bPLASTIC_CHAN_PER_DET ; j++){  ///Channel number
+//
+//                 for(int k=0; k<bPLASTIC_TAMEX_HITS; k++){
+//                     //Fat_RefCh[j] = pInput->fFat_Lead_PMT[1][j];
+//                     bPlas_RefCh0_Det1[k] = pInput->fbPlas_Lead_PMT[1][bPlastRefCh_Det1][k];
+//                     bPlas_RefCh0_Det2[k] = pInput->fbPlas_Lead_PMT[2][bPlastRefCh_Det2][k];
+// //                     bPlas_RefCh0_Det3[k] = pInput->fbPlas_Lead_PMT[3][bPlastRefCh_Det3][k];
+//
+//                         }
+//                     }
+//               }
+//   Process_Plastic_Tamex_Histos(pInput,pOutput);
+//
+//    }
+///--------------------------------------/**bPlastic TwinPeaks TAMEX Input**/------------------------------------------///
+
+  if (PrcID_Conv[2] ==2 && Used_Systems[2]==1 && bPLASTIC_TWINPEAKS==1){
+
+      for(int i=0; i<bPLASTIC_TAMEX_HITS; i++){
+         bPlas_RefCh0_Det1[i] =0;
+         bPlas_RefCh0_Det2[i] =0;
+        // bPlas_RefCh0_Det3[i] =0;
          }
-         for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++){
-             for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
-                 lead_lead_bplas_Ref1[j][k]=0;
-                 lead_lead_bplas_Ref2[j][k]=0;
-                 lead_lead_fat_Ref0[j][k]=0;
-             }
-         }
+          for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++)
+                {
+                    for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
+                        lead_lead_bplas_Ref1[j][k]=0;
+                        lead_lead_bplas_Ref2[j][k]=0;
+                        lead_lead_fat_Ref0[j][k]=0;
+                    }
+                }
 
          for (int i=1; i<4; i++){
+            for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++)
+                {
+                    for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
+                 SC41L_ANA_lead_bPlas[i][j][k] = 0;
+                 SC41R_ANA_lead_bPlas[i][j][k] = 0;
+                 SC41L_DIG_lead_bPlas[i][j][k] = 0;
+                 SC41R_DIG_lead_bPlas[i][j][k] = 0;
+                    }
+                }
+            }
 
-             for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++){
-                 for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
-                     SC41L_ANA_lead_bPlas[i][j][k] = 0;
-                     SC41R_ANA_lead_bPlas[i][j][k] = 0;
-                     SC41L_DIG_lead_bPlas[i][j][k] = 0;
-                     SC41R_DIG_lead_bPlas[i][j][k] = 0;
-                 }
-             }
-         }
+                pOutput->pbPLAS_WR = pInput->fbPlas_WR;
 
-         pOutput->pbPLAS_WR = pInput->fbPlas_WR;
+                bPlas_TAM_FATTAM = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATTAMEX][0];
+                bPlas_TAM_FATVME = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATVME][0];
+                bPlas_TAM_SC41L_DIG = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][SC41L_bPLASTIC][0];
+                bPlas_TAM_SC41R_DIG = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][SC41R_bPLASTIC][0];
+                bPlas_TAM_Ge_TRIG = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_Ge_TRIGGER][0];
 
-         bPlas_TAM_FATTAM = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATTAMEX][0];
-         bPlas_TAM_FATVME = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATVME][0];
-         bPlas_TAM_SC41L_DIG = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][SC41L_bPLASTIC][0];
-         bPlas_TAM_SC41R_DIG = pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][SC41R_bPLASTIC][0];
+       ///bPlas_AND_Coinc[j] = pInput->fFat_Lead_PMT[9][j];
 
-         //bPlas_AND_Coinc[j] = pInput->fFat_Lead_PMT[9][j];
+     for(int i=1; i<pInput->fbPlasDetNum_Fast; i++){ ///Detector number
+                 for (int j = 0; j < pInput->fbPlas_FastChan[i]; j++){  ///Channel number
 
-         // if(pOutput->pEvent_Number==100598)
-         for(int i=1; i<4; i++){ ///Detector number
-             for (int j = 0; j <bPLASTIC_CHAN_PER_DET ; j++){  ///Channel number
-                 for(int k=0; k<bPLASTIC_TAMEX_HITS; k++){
-                     //Fat_RefCh[j] = pInput->fFat_Lead_PMT[1][j];
-                     bPlas_RefCh0_Det1[k] = pInput->fbPlas_Lead_PMT[1][bPlastRefCh_Det1][k];
-                     bPlas_RefCh0_Det2[k] = pInput->fbPlas_Lead_PMT[2][bPlastRefCh_Det2][k];
-                     //                     bPlas_RefCh0_Det3[k] = pInput->fbPlas_Lead_PMT[3][bPlastRefCh_Det3][k];
+                for(int k=0; k<= pInput->fbPlast_Fast_Lead_N[i][j]; k++){
+                    //Fat_RefCh[j] = pInput->fFat_Lead_PMT[1][j];
+                    bPlas_RefCh0_Det1[k] = pInput->fbPlast_Fast_Lead[1][bPlastRefCh_Det1][k];
+                    bPlas_RefCh0_Det2[k] = pInput->fbPlast_Fast_Lead[2][bPlastRefCh_Det2][k];
+//                     bPlas_RefCh0_Det3[k] = pInput->fbPlas_Lead_PMT[3][bPlastRefCh_Det3][k];
 
-                 }
-             }
-         }
+                        }
+                    }
+              }
+  Process_Plastic_Twinpeaks_Histos(pInput,pOutput);
 
-         Process_Plastic_Tamex_Histos(pInput,pOutput);
-     } // bPlast TAMEX
+   }
+  ///--------------------------------------/**Fatima TAMEX Input**/------------------------------------------///
+   if (PrcID_Conv[4] ==4 ){
+      Process_Fatima_Tamex_Histos(pInput,pOutput);
+        pOutput->pFAT_Tamex_WR = pInput->fFat_Tamex_WR;
 
-     //--------------------------------------/**bPlastic TwinPeaks TAMEX Input**/------------------------------------------///
+        Fat_TAM_SC41L_ANA = pInput->fFat_Lead_Fast[FATIMA_TAMEX_SC41L][0];
+        Fat_TAM_SC41R_ANA = pInput->fFat_Lead_Fast[FATIMA_TAMEX_SC41R][0];
+//         Fat_TAM_SC41L_DIG = pInput->fFat_Lead_PMT[50][0];
+//         Fat_TAM_SC41R_DIG = pInput->fFat_Lead_PMT[51][0];
+   }
 
-     if (PrcID_Conv[2] ==2 && Used_Systems[2]==1 && bPLASTIC_TWINPEAKS==1){
+   ///--------------------------------------/**Fatima VME Input**/------------------------------------------///
+    if(Used_Systems[3] ==1){
+        SC40mult = 0;
+        SC41mult = 0;
+        Fatmult = 0;
+        Fat_Cha_Ref_TDC = 0;
+        Fat_WR = 0;
+        stdcmult = 0;
+        sqdcmult = 0;
 
-         for(int i=0; i<bPLASTIC_TAMEX_HITS; i++){
-             bPlas_RefCh0_Det1[i] =0;
-             bPlas_RefCh0_Det2[i] =0;
-             // bPlas_RefCh0_Det3[i] =0;
-         }
-         for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++){
-             for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
-                 lead_lead_bplas_Ref1[j][k]=0;
-                 lead_lead_bplas_Ref2[j][k]=0;
-                 lead_lead_fat_Ref0[j][k]=0;
-             }
-         }
-
-         for (int i=1; i<4; i++){
-             for (int j = 0; j < bPLASTIC_CHAN_PER_DET; j++){
-                 for(int k=0; k<bPLASTIC_TAMEX_HITS;k++){
-                     SC41L_ANA_lead_bPlas[i][j][k] = 0;
-                     SC41R_ANA_lead_bPlas[i][j][k] = 0;
-                     SC41L_DIG_lead_bPlas[i][j][k] = 0;
-                     SC41R_DIG_lead_bPlas[i][j][k] = 0;
-                 }
-             }
-         }
-
-         pOutput->pbPLAS_WR = pInput->fbPlas_WR;
-
-         bPlas_TAM_FATTAM = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATTAMEX][0];
-         bPlas_TAM_FATVME = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_FATVME][0];
-         bPlas_TAM_SC41L_DIG = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][SC41L_bPLASTIC][0];
-         bPlas_TAM_SC41R_DIG = pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][SC41R_bPLASTIC][0];
-
-         // bPlas_AND_Coinc[j] = pInput->fFat_Lead_PMT[9][j];
-
-         for(int i=1; i<pInput->fbPlasDetNum_Fast; i++){ ///Detector number
-             for (int j = 0; j < pInput->fbPlas_FastChan[i]; j++){  ///Channel number
-                 for(int k=0; k<= pInput->fbPlast_Fast_Lead_N[i][j]; k++){
-                     //Fat_RefCh[j] = pInput->fFat_Lead_PMT[1][j];
-                     bPlas_RefCh0_Det1[k] = pInput->fbPlast_Fast_Lead[1][bPlastRefCh_Det1][k];
-                     bPlas_RefCh0_Det2[k] = pInput->fbPlast_Fast_Lead[2][bPlastRefCh_Det2][k];
-                     //                   bPlas_RefCh0_Det3[k] = pInput->fbPlas_Lead_PMT[3][bPlastRefCh_Det3][k];
-
-                 }
-             }
-         }
-
-         Process_Plastic_Twinpeaks_Histos(pInput,pOutput);
-     }
-
-     //--------------------------------------/**Fatima TAMEX Input**/------------------------------------------///
-     if (PrcID_Conv[4] ==4 ){
-         Process_Fatima_Tamex_Histos(pInput,pOutput);
-         pOutput->pFAT_Tamex_WR = pInput->fFat_Tamex_WR;
-
-         Fat_TAM_SC41L_ANA = pInput->fFat_Lead_Fast[FATIMA_TAMEX_SC41L][0];
-         Fat_TAM_SC41R_ANA = pInput->fFat_Lead_Fast[FATIMA_TAMEX_SC41R][0];
-         //         Fat_TAM_SC41L_DIG = pInput->fFat_Lead_PMT[50][0];
-         //         Fat_TAM_SC41R_DIG = pInput->fFat_Lead_PMT[51][0];
-     }
-
-     //--------------------------------------/**Fatima VME Input**/------------------------------------------///
-
-     SC40mult = 0;
-     SC41mult = 0;
-     Fatmult = 0;
-     Fat_Cha_Ref_TDC = 0;
-     Fat_WR = 0;
-     stdcmult = 0;
-     sqdcmult = 0;
-
-     //bplast chans in fatima VME
-     for(int i=0; i<6; i++) Fat_VME_bPlast[i] =0;
-     for(int i=0; i<FAT_VME_MAX_MULTI; i++){
+       //bplast chans in fatima VME
+        for(int i=0; i<6; i++) Fat_VME_bPlast[i] =0;
+            for(int i=0; i<FAT_VME_MAX_MULTI; i++){
          //Fat_QDC_E[i] = 0;
          //Fat_QDC_T[i] =0;
-         SC40[i] = 0;
-         SC41[i] = 0;
-         Fat_TDC_ID[i] = -2;
-         Fat_QDC_ID[i] = -1;
-         Fat_TDC_T[i] = 0;
+            SC40[i] = 0;
+            SC41[i] = 0;
+            Fat_TDC_ID[i] = -2;
+            Fat_QDC_ID[i] = -1;
+            Fat_TDC_T[i] = 0;
 
-         Fat_TDC_Singles_ID[i] = -2;
-         Fat_QDC_Singles_ID[i] = -1;
-         Fat_QDC_Singles_E[i] = 0;
-         Fat_QDC_Singles_t_coarse[i] = 0;
-         Fat_QDC_Singles_t_fine[i] = 0;
-         Fat_TDC_Singles_t[i] = 0;
+            Fat_TDC_Singles_ID[i] = -2;
+            Fat_QDC_Singles_ID[i] = -1;
+            Fat_QDC_Singles_E[i] = 0;
+            Fat_QDC_Singles_t_coarse[i] = 0;
+            Fat_QDC_Singles_t_fine[i] = 0;
+            Fat_TDC_Singles_t[i] = 0;
+            }
+}//End for initialise arrays
 
-     }//End for initialise arrays
+  if (PrcID_Conv[3]==3 &&Used_Systems[3] ==1){
 
-     if (PrcID_Conv[3]==3 &&Used_Systems[3] ==1){
+    Fat_WR = pInput->fFat_WR;
 
-         Fat_WR = pInput->fFat_WR;
+    Fatmult =  pInput->fFat_mult;
 
-         Fatmult =  pInput->fFat_mult;
-
-         //cout << " anl proc fat mult " << Fatmult << endl;
-
-
-         if(Fatmult > 0){
-
-             //QDC
-             for (int i = 0; i<Fatmult; i++){
-                 Fat_QDC_ID[i] = pInput->fFat_QDC_ID[i];
-                 Fat_QDC_E[i] = pInput->fFat_QDC_E[i];
-             }//End QDC for loop
-
-             //TDC
-
-             for (int i = 0; i<Fatmult; i++){
-                 Fat_TDC_ID[i] = pInput->fFat_TDC_ID[i];
-                 Fat_TDC_T[i] = pInput->fFat_TDC_Time[i];
-                 if(Fat_TDC_ID[i]==FAT_TDC_REF_CHANNEL)Fat_Cha_Ref_TDC = Fat_TDC_T[i];
-             }//End TDC for loop
-         }
-
-         //                  INPUTS
-
-         for(int i = 0; i < 6; i++){
-             Fat_VME_bPlast[i] = pInput->fFat_bplastChanT[i];
-         }
-
-         SC40mult =  pInput->fFat_SC40mult;
-         SC41mult =  pInput->fFat_SC41mult;
-
-         for(int i = 0; i < SC40mult; i++){
-
-             SC40[i] = pInput->fSC40[i];
-
-         }//End sc41 for fill
-
-         for(int i = 0; i < SC41mult; i++){
-
-             SC41[i] = pInput->fSC41[i];
-
-         }//End sc41 for fill
+    //cout << " anl proc fat mult " << Fatmult << endl;
 
 
-		 //Inputting singles TDC and QDC hits
-         stdcmult = pInput->fFat_tdcsinglescount;
-         sqdcmult = pInput->fFat_qdcsinglescount;
+if(Fatmult > 0){
 
-         for (int i = 0; i<stdcmult; i++){
-             Fat_TDC_Singles_t[i] = pInput->fFat_TDC_Singles_t[i];
-             Fat_TDC_Singles_ID[i] = pInput->fFat_TDC_Singles_ID[i];
-         }
+    //QDC
+    for (int i = 0; i<Fatmult; i++){
+      Fat_QDC_ID[i] = pInput->fFat_QDC_ID[i];
+      Fat_QDC_E[i] = pInput->fFat_QDC_E[i];
+     }//End QDC for loop
 
-         for (int i = 0; i<sqdcmult; i++){
-             Fat_QDC_Singles_E[i] = pInput->fFat_QDC_Singles_E[i];
-             Fat_QDC_Singles_ID[i] = pInput->fFat_QDC_Singles_ID[i];
-             Fat_QDC_Singles_t_coarse[i] = pInput->fFat_QDC_Singles_t_coarse[i];
-             Fat_QDC_Singles_t_fine[i] = pInput->fFat_QDC_Singles_t_fine[i];
-         }
+    //TDC
+    for (int i = 0; i<Fatmult; i++){
+      Fat_TDC_ID[i] = pInput->fFat_TDC_ID[i];
+      Fat_TDC_T[i] = pInput->fFat_TDC_Time[i];
+       if(Fat_TDC_ID[i]==FAT_TDC_REF_CHANNEL)Fat_Cha_Ref_TDC = Fat_TDC_T[i];
+    }//End TDC for loop
+}
+//                  INPUTS
 
-         Process_Fatima_Histos(pInput, pOutput);
-     }//End of proc ID
+    for(int i = 0; i < 6; i++){
+        Fat_VME_bPlast[i] = pInput->fFat_bplastChanT[i];
+    }
 
-     //--------------------------------------/**Germanium Input**/------------------------------------------///
-     GeFired = -1;
-     RefTGe=0;
-     //Ge_WR = 0;
-     for(int g = 0; g<Germanium_MAX_HITS; g++){
-         GeDet[g] = -1;
-         GeCrys[g] = -1;
-         GeE[g] = -1;
-         GeE_Cal[g] = -1;
-         GeT[g] =-1;
-         GePileUp[g] = false;
-         GeOverFlow[g] = false;
-         Ge_Talign[g]=0;
+      SC40mult =  pInput->fFat_SC40mult;
+      SC41mult =  pInput->fFat_SC41mult;
+
+        for(int i = 0; i < SC40mult; i++){
+
+        SC40[i] = pInput->fSC40[i];
+
+        }//End sc41 for fill
+
+        for(int i = 0; i < SC41mult; i++){
+
+            SC41[i] = pInput->fSC41[i];
+
+        }//End sc41 for fill
+
+
+		//Inputting singles TDC and QDC hits
+        stdcmult = pInput->fFat_tdcsinglescount;
+        sqdcmult = pInput->fFat_qdcsinglescount;
+
+       for (int i = 0; i<stdcmult; i++){
+        Fat_TDC_Singles_t[i] = pInput->fFat_TDC_Singles_t[i];
+        Fat_TDC_Singles_ID[i] = pInput->fFat_TDC_Singles_ID[i];
+       }
+
+       for (int i = 0; i<sqdcmult; i++){
+        Fat_QDC_Singles_E[i] = pInput->fFat_QDC_Singles_E[i];
+        Fat_QDC_Singles_ID[i] = pInput->fFat_QDC_Singles_ID[i];
+        Fat_QDC_Singles_t_coarse[i] = pInput->fFat_QDC_Singles_t_coarse[i];
+        Fat_QDC_Singles_t_fine[i] = pInput->fFat_QDC_Singles_t_fine[i];
+       }
+        Process_Fatima_Histos(pInput, pOutput);
+  }//End of proc ID
+
+
+  ///--------------------------------------/**Germanium Input**/------------------------------------------///
+       GeFired = -1;
+       RefTGe=0;
+       //Ge_WR = 0;
+       for(int g = 0; g<Germanium_MAX_HITS; g++){
+          GeDet[g] = -1;
+          GeCrys[g] = -1;
+          GeE[g] = -1;
+          GeE_Cal[g] = -1;
+          GeT[g] =-1;
+          GePileUp[g] = false;
+          GeOverFlow[g] = false;
+          Ge_Talign[g]=0;
+       }
+
+       if ( PrcID_Conv[5]==5 && Used_Systems[5]==1){
+        GeFired =  pInput->fGe_fired;
+    //    GePileup = pInput->fGe_Pileup;
+        Ge_WR = pInput->fGe_WR;
+
+        for (int i = 0; i<GeFired; i++)
+        {
+          GeDet[i] = pInput->fGe_Detector[i];
+          GeCrys[i] = pInput->fGe_Crystal[i];
+          GePileUp[i] = pInput->fGe_Pileup[i];
+          GeOverFlow[i] = pInput->fGe_Overflow[i];
+          GeE[i] = pInput->fGe_E[i];
+          GeEventT[i]=pInput->fGe_Event_T[i];
+          GeT[i] = pInput->fGe_T[i];
+          GeCF_T[i] = pInput->fGe_cfT[i];
+
+          // Maybe keep this for auto calibration program purposes
+          int id = GeDet[i] * Germanium_CRYSTALS + GeCrys[i];
+	  if(id<64){
+          GeE_Cal[i] = (fCal->AGe[id]* pow( GeE[i],2) + fCal->BGe[id]*  GeE[i] + fCal->CGe[id]);
+
+       }
+            // int id_Ge = det * Germanium_CRYSTALS +  crys;
+
+     if(id==1) {
+         RefTGe=GeT[i];
+         RefCFDGe=GeCF_T[i];
      }
 
-     if ( PrcID_Conv[5]==5 && Used_Systems[5]==1){
-         GeFired =  pInput->fGe_fired;
-         //    GePileup = pInput->fGe_Pileup;
-         Ge_WR = pInput->fGe_WR;
-
-         for (int i = 0; i<GeFired; i++){
-             GeDet[i] = pInput->fGe_Detector[i];
-             GeCrys[i] = pInput->fGe_Crystal[i];
-             GePileUp[i] = pInput->fGe_Pileup[i];
-             GeOverFlow[i] = pInput->fGe_Overflow[i];
-             GeE[i] = pInput->fGe_E[i];
-             GeEventT[i]=pInput->fGe_Event_T[i];
-             GeT[i] = pInput->fGe_T[i];
-             GeCF_T[i] = pInput->fGe_cfT[i];
-
-             // Maybe keep this for auto calibration program purposes
-             int id = GeDet[i] * Germanium_CRYSTALS + GeCrys[i];
-	         if(id<32){
-
-                 GeE_Cal[i] = (fCal->AGe[id]* pow( GeE[i],2) + fCal->BGe[id]*  GeE[i] + fCal->CGe[id]);
-
-                 //  cout<<"1GeE_Cal[i] " << GeE_Cal[i] <<" i " << i << " GeDet[i] " <<GeDet[i] << " GeCrys[i] " <<GeCrys[i]<< endl;
-	         }
-             // int id_Ge = det * Germanium_CRYSTALS +  crys;
-
-             if(id==1) {
-                 RefTGe=GeT[i];
-                 RefCFDGe=GeCF_T[i];
-             }
-
-             Ge_Talign[i] = (GeT[i]-fCal->Ge_T_align_par[id]);
+      Ge_Talign[i] = (GeT[i]-fCal->Ge_T_align_par[id]);
 
              pOutput->pGe_T_Aligned[GeDet[i]][GeCrys[i]]=Ge_Talign[i];
-             //cout<<"1event "<< event_number<<"GeDet[i] " << GeDet[i] << " GeCrys[i] " << GeCrys[i]<< " Ge_Talign[i] " << Ge_Talign[i] <<" GeT[i] " << GeT[i]<<" CalGe_T_align_par[id] " <<fCal->Ge_T_align_par[id] << " id " << id  << " i " << i << endl;
+                   //Do the CFD time alignment (detector vs all)
+              Ge_cfd_Talign[i] = GeCF_T[i]+fCal->Ge_cfd_align_par[id];
+              pOutput->pGe_CF_T_Aligned[GeDet[i]][GeCrys[i]] = Ge_cfd_Talign[i];
+        }
 
-             //Do the CFD time alignment (detector vs all)
-             Ge_cfd_Talign[i] = GeCF_T[i]+fCal->Ge_cfd_align_par[id];
-             pOutput->pGe_CF_T_Aligned[GeDet[i]][GeCrys[i]] = Ge_cfd_Talign[i];
-         }
-
-         Process_Germanium_Histos(pOutput);
+            Process_Germanium_Histos(pOutput);
       }
 
-     //--------------------------------------/**Finger Input**/------------------------------------------///
+ ///--------------------------------------/**Finger Input**/------------------------------------------///
 
-     pOutput->SetValid(isValid);
-     return isValid;
+  pOutput->SetValid(isValid);
+  return isValid;
 
-}  //End of BuildEvent
+ }  //End of BuildEvent
+
+
 
 
 /**----------------------------------------------------------------------------------------------**/
@@ -730,7 +741,6 @@ Bool_t EventAnlProc::BuildEvent(TGo4EventElement* dest){
  /**----------------------------------------------------------------------------------------------**/
 void EventAnlProc::Make_FRS_Histos(){
 
-
     hID_Z1_vs_T = MakeTH2('D',"FRS/ID/ID_Z1_Time", "Z1 vs Time",1240,16600,29000, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Time (/10 mins)", "Z1 s2-s4");
 
     hID_AoQ_vs_T = MakeTH2('D',"FRS/ID/ID_AoQ_Time", "AoQ vs Time",1200,17000,29000,1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot,"Time (/10 mins)", "AoQ mhtdc s2-s4");
@@ -773,10 +783,12 @@ void EventAnlProc::Make_FRS_Histos(){
     hID_x2x4 = MakeTH2('D',"FRS/ID/ID_x2_x4","ID_x2_x4",200,-100,100,200,-100,100,"x2 mm","x4 mm");
     hID_SC41dE_AoQ = MakeTH2('D',"FRS/ID/ID_SC41dE_AoQ","ID_SC41dE_AoQ", 1000,1.2,3.0, 1000,0.,4000.,"A/Q s2-s4", "SC41 dE");
     hID_dEToF = MakeTH2('D',"FRS/ID/ID_dEToF","ID_dEToF", 2000, 0.,70000.,400,0,4000, "tof S2-S4 Sci.Tof(2)", "Music_dE(1)");
-    hID_Z_Sc21E = MakeTH2('D',"FRS/ID/ID_Z1_Sc21E","ID_Z1_Sc21E", 300,0,25.,400,0,4000.,"Z s2-s4", "sqrt(Sc21_L*sC21_R)");
+     hID_Z_Sc21E = MakeTH2('D',"FRS/ID/ID_Z1_Sc21E","ID_Z1_Sc21E", 300,0,25.,400,0,4000.,
+            "Z s2-s4", "sqrt(Sc21_L*sC21_R)");
 
-    //     hTPC_X_AX_S4=MakeTH2('D',"FRS/TPC/S4_focus/S4focus_X_angleX","S4focus_X_angleX", 400,-100.,100., 250,-50.0,50.0,"X at S4 [mm] ","x angle [mrad] ");
-    //     hTPC_Y_AY_S4=MakeTH2('D',"FRS/TPC/S4_focus/S4focus_Y_angleY","S4_Y_angleY", 400,-100.,100., 250,-50.0,50.0,"Y at S4 [mm] ","y angle [mrad] ");
+//     hTPC_X_AX_S4=MakeTH2('D',"FRS/TPC/S4_focus/S4focus_X_angleX","S4focus_X_angleX", 400,-100.,100., 250,-50.0,50.0,"X at S4 [mm] ","x angle [mrad] ");
+//     hTPC_Y_AY_S4=MakeTH2('D',"FRS/TPC/S4_focus/S4focus_Y_angleY","S4_Y_angleY", 400,-100.,100., 250,-50.0,50.0,"Y at S4 [mm] ","y angle [mrad] ");
+
 
     ///MHTDC Histograms
 
@@ -810,24 +822,25 @@ void EventAnlProc::Make_FRS_Histos(){
 
     hID_Z_dE2_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_dE2_mhtdc","ID_Z1_dE2_mhtdc", 400,frs_id->min_z_plot,frs_id->max_z_plot, 250,0.,4000.,"Z1", "MUSIC2_dE");
 
-    hID_Z_Sc21E_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_Sc21E_mhtdc","ID_Z1_Sc21E_mhtdc", 300,0,25.,400,0,4000.,"Z s2-s4", "sqrt(Sc21_L*sC21_R)");
+    hID_Z_Sc21E_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_Z1_Sc21E_mhtdc","ID_Z1_Sc21E_mhtdc", 300,0,25.,400,0,4000.,
+            "Z s2-s4", "sqrt(Sc21_L*sC21_R)");
 
     hID_x2z_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_x2Z1_mhtdc","ID_x2Z1_mhtdc", 400,frs_id->min_z_plot,frs_id->max_z_plot, 200,-100.,100., "Z1 s2-s4", "X at S2 [mm]");
     hID_x4z_mhtdc = MakeTH2('D',"FRS/MHTDC/ID/ID_x4Z1_mhtdc","ID_x4Z1_mhtdc", 400,frs_id->min_z_plot,frs_id->max_z_plot, 200,-100.,100., "Z1 s2-s4", "X at S4 [mm]");
 
-    //     hdEdegoQ_Z2_mhtdc = MakeTH2('D',"FRS/MHTDC/ID_dEdegoQZ2_mhtdc","dE in s2 degrader/Q vs. Z2 MHTDC", 1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 0.1,0.8, "Z2 from MUSIC41 MHTDC", "dE(S2deg)/Q [a.u.]");
+//     hdEdegoQ_Z2_mhtdc = MakeTH2('D',"FRS/MHTDC/ID_dEdegoQZ2_mhtdc","dE in s2 degrader/Q vs. Z2 MHTDC", 1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 0.1,0.8, "Z2 from MUSIC41 MHTDC", "dE(S2deg)/Q [a.u.]");
 
-    //  hID_Z_AoQ_mhtdc_first_hit = MakeTH2('D',"FRS/MHTDC/ID_Z1_AoQ_mhtdc_first_hit", "Z1 vs A/Q First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q mhtdc first hit s2-s4", "Z1 mhtdc first hit s2-s4");
+  //  hID_Z_AoQ_mhtdc_first_hit = MakeTH2('D',"FRS/MHTDC/ID_Z1_AoQ_mhtdc_first_hit", "Z1 vs A/Q First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q mhtdc first hit s2-s4", "Z1 mhtdc first hit s2-s4");
 
-    //  hID_Z_AoQ_mhtdc_excluding_first_hit = MakeTH2('D',"FRS/MHTDC/ID_Z1_AoQ_mhtdc_exc_first_hit_elif", "Z1 vs A/Q Excl First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q mhtdc non-first hit s2-s4", "Z1 mhtdc non-first hit s2-s4");
+  //  hID_Z_AoQ_mhtdc_excluding_first_hit = MakeTH2('D',"FRS/MHTDC/ID_Z1_AoQ_mhtdc_exc_first_hit_elif", "Z1 vs A/Q Excl First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q mhtdc non-first hit s2-s4", "Z1 mhtdc non-first hit s2-s4");
 
     //hID_Z_AoQ_corr_mhtdc_first_hit = MakeTH2('D',"FRS/MHTDC//ID_Z1_AoQ_corr_mhtdc_first_hit", "Z1 vs A/Q corr First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q corr mhtdc first hit s2-s4", "Z1 mhtdc first hit s2-s4");
 
-    //ID_Z1_AoQ_corr_mhtdc_exc_first_hit", "Z1 vs A/Q corr Excl First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q mhtdc corr non-first hit s2-s4", "Z1 mhtdc  non-first hit s2-s4");
+   //ID_Z1_AoQ_corr_mhtdc_exc_first_hit", "Z1 vs A/Q corr Excl First hit (mhtdc)",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q mhtdc corr non-first hit s2-s4", "Z1 mhtdc  non-first hit s2-s4");
 
     //hID_A2_AoQ_Corr_mhtdc= MakeTH2('D',"FRS/MHTDC/ID_AoQ_corr_a2_mhtdc", "A/Q corr vs angle",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q mhtdc corr ", "Angle S2 (mrad)");
 
-    //   hID_A4_AoQ_Corr_mhtdc= MakeTH2('D',"FRS/MHTDC/ID_AoQ_corr_a4_mhtdc", "A/Q corr vs angle",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q mhtdc corr ", "Angle S4 (mrad)");
+   //   hID_A4_AoQ_Corr_mhtdc= MakeTH2('D',"FRS/MHTDC/ID_AoQ_corr_a4_mhtdc", "A/Q corr vs angle",1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q mhtdc corr ", "Angle S4 (mrad)");
 
     ///Now define the 2D Polygon PID Gated
 
@@ -836,177 +849,179 @@ void EventAnlProc::Make_FRS_Histos(){
     int num_ID_Z_Z2 = {MAX_FRS_GATE};
     int num_ID_Z_AoQ = {MAX_FRS_GATE};
     int num_ID_dEdegZ1{MAX_FRS_GATE};
-    Float_t init_ID_x2AoQ[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_x4AoQ[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_x2AoQ_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_x4AoQ_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_Z_Z2[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_Z_Z2_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_Z_AoQ[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_dEdegZ1[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_ID_Z_AoQ_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
-    Float_t init_dEdegZ1_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_x2AoQ[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_x4AoQ[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_x2AoQ_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_x4AoQ_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_Z_Z2[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_Z_Z2_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_Z_AoQ[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_dEdegZ1[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_ID_Z_AoQ_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
+     Float_t init_dEdegZ1_mhtdc[MAX_FRS_GATE][MAX_FRS_PolyPoints][2];
 
-    //FRS gates initialisation
-    for(int i=0; i<MAX_FRS_GATE; i++){
-        for(int j=0; j<MAX_FRS_PolyPoints; j++){
-            init_ID_x2AoQ[i][j][0] = XX2_AoQ[i][j];
-            init_ID_x2AoQ[i][j][1] = YX2_AoQ[i][j];
-            init_ID_x4AoQ[i][j][0] = XX4_AoQ[i][j];
-            init_ID_x4AoQ[i][j][1] = YX4_AoQ[i][j];
-            init_ID_Z_Z2[i][j][0] = X_ZZ2[i][j];
-            init_ID_Z_Z2[i][j][1] = Y_ZZ2[i][j];
-            init_dEdegZ1[i][j][0] =X_dEdeg[i][j];
-            init_dEdegZ1[i][j][1] =Y_dEdeg[i][j];
-            init_ID_Z_AoQ[i][j][0] =X_ZAoQ[i][j];
-            init_ID_Z_AoQ[i][j][1] =Y_ZAoQ[i][j];
 
-            init_ID_Z_AoQ_mhtdc[i][j][0] =X_ZAoQ_mhtdc[i][j];
-            init_ID_Z_AoQ_mhtdc[i][j][1] =Y_ZAoQ_mhtdc[i][j];
-            init_dEdegZ1_mhtdc[i][j][0] =X_dEdeg_mhtdc[i][j];
-            init_dEdegZ1_mhtdc[i][j][1] =Y_dEdeg_mhtdc[i][j];
-            init_ID_Z_Z2_mhtdc[i][j][0] =X_ZZ2_mhtdc[i][j];
-            init_ID_Z_Z2_mhtdc[i][j][1] =Y_ZZ2_mhtdc[i][j];
-            init_ID_x2AoQ_mhtdc[i][j][0] = XX2_AoQ_mhtdc[i][j];
-            init_ID_x2AoQ_mhtdc[i][j][1] = YX2_AoQ_mhtdc[i][j];
-            init_ID_x4AoQ_mhtdc[i][j][0] = XX4_AoQ_mhtdc[i][j];
-            init_ID_x4AoQ_mhtdc[i][j][1] = YX4_AoQ_mhtdc[i][j];
+     ///FRS gates initialisation
+   for(int i=0; i<MAX_FRS_GATE; i++){
+       for(int j=0; j<MAX_FRS_PolyPoints; j++){
+        init_ID_x2AoQ[i][j][0] = XX2_AoQ[i][j];
+        init_ID_x2AoQ[i][j][1] = YX2_AoQ[i][j];
+        init_ID_x4AoQ[i][j][0] = XX4_AoQ[i][j];
+        init_ID_x4AoQ[i][j][1] = YX4_AoQ[i][j];
+        init_ID_Z_Z2[i][j][0] = X_ZZ2[i][j];
+        init_ID_Z_Z2[i][j][1] = Y_ZZ2[i][j];
+        init_dEdegZ1[i][j][0] =X_dEdeg[i][j];
+        init_dEdegZ1[i][j][1] =Y_dEdeg[i][j];
+        init_ID_Z_AoQ[i][j][0] =X_ZAoQ[i][j];
+        init_ID_Z_AoQ[i][j][1] =Y_ZAoQ[i][j];
 
-        }
-    }
+
+        init_ID_Z_AoQ_mhtdc[i][j][0] =X_ZAoQ_mhtdc[i][j];
+        init_ID_Z_AoQ_mhtdc[i][j][1] =Y_ZAoQ_mhtdc[i][j];
+        init_dEdegZ1_mhtdc[i][j][0] =X_dEdeg_mhtdc[i][j];
+        init_dEdegZ1_mhtdc[i][j][1] =Y_dEdeg_mhtdc[i][j];
+        init_ID_Z_Z2_mhtdc[i][j][0] =X_ZZ2_mhtdc[i][j];
+        init_ID_Z_Z2_mhtdc[i][j][1] =Y_ZZ2_mhtdc[i][j];
+        init_ID_x2AoQ_mhtdc[i][j][0] = XX2_AoQ_mhtdc[i][j];
+        init_ID_x2AoQ_mhtdc[i][j][1] = YX2_AoQ_mhtdc[i][j];
+        init_ID_x4AoQ_mhtdc[i][j][0] = XX4_AoQ_mhtdc[i][j];
+        init_ID_x4AoQ_mhtdc[i][j][1] = YX4_AoQ_mhtdc[i][j];
+
+       }
+   }
     char name[50], title[100];
 
-    //-----------------------------NOTE TAC GATES  ---------------------///
+     ///-----------------------------NOTE TAC GATES  ---------------------///
     for(int i=0; i<MAX_FRS_GATE; i++){
         //Z vs AoQ
-        sprintf(name,"cID_Z1_AoQ%d",i);
-        cID_Z_AoQ[i] = MakePolyCond("FRS_Z1_AoQ_Gates", name, num_ID_Z_AoQ, init_ID_Z_AoQ[i], hID_Z_AoQ->GetName());
+      sprintf(name,"cID_Z1_AoQ%d",i);
+      cID_Z_AoQ[i] = MakePolyCond("FRS_Z1_AoQ_Gates", name, num_ID_Z_AoQ, init_ID_Z_AoQ[i], hID_Z_AoQ->GetName());
 
-        hID_ZAoQ_ZAoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_Z1AoQGated/ID_ZAoQ_ZAoQgate%d",i), Form("ID_ZAoQ_ZAoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z s2-s4");
+      hID_ZAoQ_ZAoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_Z1AoQGated/ID_ZAoQ_ZAoQgate%d",i), Form("ID_ZAoQ_ZAoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z s2-s4");
 
-        hID_Z1Z2_ZAoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_Z1AoQGated/ID_Z1Z2_ZAoQgate%d",i), Form("ID_Z1Z2_ZAoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on Z1 vs AoQ: MUSIC Z2");
+      hID_Z1Z2_ZAoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_Z1AoQGated/ID_Z1Z2_ZAoQgate%d",i), Form("ID_Z1Z2_ZAoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on Z1 vs AoQ: MUSIC Z2");
 
-        hID_x2AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_Z1AoQGated/ID_x2AoQ_Z1AoQgate%d",i), Form("ID_x2AoQ_Z1AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1 vs AoQ: X at S2 [mm]");
+      hID_x2AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_Z1AoQGated/ID_x2AoQ_Z1AoQgate%d",i), Form("ID_x2AoQ_Z1AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1 vs AoQ: X at S2 [mm]");
 
-        hID_x4AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_Z1AoQGated/ID_x4AoQ_Z1AoQgate%d",i), Form("ID_x4AoQ_Z1AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1 vs AoQ: X at S4 [mm]");
+      hID_x4AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_Z1AoQGated/ID_x4AoQ_Z1AoQgate%d",i), Form("ID_x4AoQ_Z1AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1 vs AoQ: X at S4 [mm]");
 
-        hID_dEdegoQ_Z1_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/dEdegoQZ1_Z1AoQGated/dEdegoQZ1_Z1AoQgate%d",i), Form("dEdegoQZ1_Z1AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,50., "Z1 from MUSIC41", "gate on Z1 vs AoQ: dE(S2deg)/Q [a.u.]");
+      hID_dEdegoQ_Z1_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/dEdegoQZ1_Z1AoQGated/dEdegoQZ1_Z1AoQgate%d",i), Form("dEdegoQZ1_Z1AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,50., "Z1 from MUSIC41", "gate on Z1 vs AoQ: dE(S2deg)/Q [a.u.]");
 
-        hID_dEdegZ1_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/dEdegZ1_Z1AoQ/dEdegZ1_Z1AoQgate%d",i), Form("dEdegZ1_Z1AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,50., "Z1 from MUSIC41", "gate on Z1 vs AoQ: dE(S2deg) [a.u.]");
+      hID_dEdegZ1_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/dEdegZ1_Z1AoQ/dEdegZ1_Z1AoQgate%d",i), Form("dEdegZ1_Z1AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,50., "Z1 from MUSIC41", "gate on Z1 vs AoQ: dE(S2deg) [a.u.]");
 
-        //     hID_a2AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1AoQGated/ID_a2AoQ_Z1AoQgate%d",i), Form("ID_A2AoQ_Z1AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " gate on Z1 vs AoQ: Angle S2 (mrad)");
+ //     hID_a2AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1AoQGated/ID_a2AoQ_Z1AoQgate%d",i), Form("ID_A2AoQ_Z1AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " gate on Z1 vs AoQ: Angle S2 (mrad)");
 
-        hID_a2_Z1AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1AoQGated/ID_a2_Z1AoQGated%d",i), Form("ID_a2_Z1AoQGate%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
+      hID_a2_Z1AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1AoQGated/ID_a2_Z1AoQGated%d",i), Form("ID_a2_Z1AoQGate%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        //   hID_a4AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1AoQGated/ID_a4AoQ_Z1AoQgate%d",i), Form("ID_A2AoQ_Z1AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " gate on Z1 vs AoQ: Angle S4 (mrad)");
+   //   hID_a4AoQ_Z1AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1AoQGated/ID_a4AoQ_Z1AoQgate%d",i), Form("ID_A2AoQ_Z1AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " gate on Z1 vs AoQ: Angle S4 (mrad)");
 
-        hID_a4_Z1AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1AoQGated/ID_a4_Z1AoQGated%d",i), Form("ID_a4_Z1AoQGate%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
+      hID_a4_Z1AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1AoQGated/ID_a4_Z1AoQGated%d",i), Form("ID_a4_Z1AoQGate%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-        ///Z vs Z2
-        sprintf(name,"cID_Z1_Z2_Gate%d",i);
-        cID_Z_Z2gate[i] = MakePolyCond("FRS_Z1_Z2_Gates",name,num_ID_Z_Z2,init_ID_Z_Z2[i], hID_Z_Z2 ->GetName());
+       ///Z vs Z2
+      sprintf(name,"cID_Z1_Z2_Gate%d",i);
+      cID_Z_Z2gate[i] = MakePolyCond("FRS_Z1_Z2_Gates",name,num_ID_Z_Z2,init_ID_Z_Z2[i], hID_Z_Z2 ->GetName());
 
-        hID_Z1_Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2Gated/ID_Z1_Z2gate%d",i), Form("ID_Z1_Z2gate%d",i),2000,frs_id->min_z_plot,frs_id->max_z_plot, 2000,frs_id->min_z_plot,frs_id->max_z_plot,"Z1 s2-s4", "Z2 s2-s4");
+      hID_Z1_Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2Gated/ID_Z1_Z2gate%d",i), Form("ID_Z1_Z2gate%d",i),2000,frs_id->min_z_plot,frs_id->max_z_plot, 2000,frs_id->min_z_plot,frs_id->max_z_plot,"Z1 s2-s4", "Z2 s2-s4");
 
-        hID_x2AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_Z1Z2Gated/ID_x2AoQ_Z1Z2gate%d",i), Form("ID_x2AoQ_Z1Z2gate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z X at S2 [mm]");
+      hID_x2AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_Z1Z2Gated/ID_x2AoQ_Z1Z2gate%d",i), Form("ID_x2AoQ_Z1Z2gate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z X at S2 [mm]");
 
-        hID_x4AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_Z1Z2Gated/ID_x4AoQ_Z1Z2gate%d",i), Form("ID_x4AoQ_Z1Z2gate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z X at S4 [mm]");
+      hID_x4AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_Z1Z2Gated/ID_x4AoQ_Z1Z2gate%d",i), Form("ID_x4AoQ_Z1Z2gate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z X at S4 [mm]");
 
-        hID_ZAoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_Z1Z2Gated/ID_Z1AoQ_Z1Z2gate%d",i), Form("ID_Z1AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music2");
+      hID_ZAoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_Z1Z2Gated/ID_Z1AoQ_Z1Z2gate%d",i), Form("ID_Z1AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music2");
 
-        // hID_a2AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1Z2Gated/ID_a2AoQ_Z1Z2gate%d",i), Form("ID_A2AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
+     // hID_a2AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1Z2Gated/ID_a2AoQ_Z1Z2gate%d",i), Form("ID_A2AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
 
-        hID_a2_Z1Z2gate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1Z2gate/ID_a2_Z1Z2gate%d",i), Form("ID_a2_Z1Z2gate%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
+       hID_a2_Z1Z2gate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1Z2gate/ID_a2_Z1Z2gate%d",i), Form("ID_a2_Z1Z2gate%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        //hID_a4AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1Z2Gated/ID_a4AoQ_Z1Z2gate%d",i), Form("ID_A2AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+      //hID_a4AoQ_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1Z2Gated/ID_a4AoQ_Z1Z2gate%d",i), Form("ID_A2AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
-        hID_a4_Z1Z2gate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1Z2gate/ID_a4_Z1Z2gate%d",i), Form("ID_a4_Z1Z2gate%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
+       hID_a4_Z1Z2gate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1Z2gate/ID_a4_Z1Z2gate%d",i), Form("ID_a4_Z1Z2gate%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-        hID_dEdegZ1_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/Z1Z2/dEdegZ1_Z1Z2gated%d",i), Form("dEdegZ1_Z1Z2gated%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z from MUSIC41", "dE(S2deg) [a.u.]");
+      hID_dEdegZ1_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/Z1Z2/dEdegZ1_Z1Z2gated%d",i), Form("dEdegZ1_Z1Z2gated%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z from MUSIC41", "dE(S2deg) [a.u.]");
 
-        hID_dEdegoQ_Z1_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/dEdegoQZ1_Z1Z2gated/dEdegoQZ1_Z1Z2gated%d",i), Form("dEdegoQZ1_Z1Z2gated%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z from MUSIC41", "dE(S2deg)/Q [a.u.]");
+      hID_dEdegoQ_Z1_Z1Z2gate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/dEdegoQZ1_Z1Z2gated/dEdegoQZ1_Z1Z2gated%d",i), Form("dEdegoQZ1_Z1Z2gated%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z from MUSIC41", "dE(S2deg)/Q [a.u.]");
 
-        ///X2 vs AoQ
-        sprintf(name,"cID_x2AoQ%d",i);
-        cID_x2AoQ[i] = MakePolyCond("FRS_X2_Gates",name,num_ID_x2AoQ,init_ID_x2AoQ[i], hID_x2AoQ->GetName());
+      ///X2 vs AoQ
+      sprintf(name,"cID_x2AoQ%d",i);
+      cID_x2AoQ[i] = MakePolyCond("FRS_X2_Gates",name,num_ID_x2AoQ,init_ID_x2AoQ[i], hID_x2AoQ->GetName());
 
-        hID_x2AoQ_x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_x2AoQGated/ID_x2AoQ_x2AoQgate%d",i), Form("ID_x2AoQ_x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X2 AoQ, ID X2: X at S2 [mm]");
+      hID_x2AoQ_x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_x2AoQGated/ID_x2AoQ_x2AoQgate%d",i), Form("ID_x2AoQ_x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X2 AoQ, ID X2: X at S2 [mm]");
 
-        hID_Z1Z2_x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_x2AoQGated/ID_Z1Z2_x2AoQgate%d",i), Form("ID_Z1Z2_x2AoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x2 vs AoQ: MUSIC Z2");
+      hID_Z1Z2_x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_x2AoQGated/ID_Z1Z2_x2AoQgate%d",i), Form("ID_Z1Z2_x2AoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x2 vs AoQ: MUSIC Z2");
 
-        hID_x2AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_x2AoQGated/ID_x2AoQ_Z1Z2x2AoQgate%d",i), Form("ID_x2AoQ_Z1Z2x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1 Z2 X2 AoQ, ID X2: X at S2 [mm]");
+      hID_x2AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_x2AoQGated/ID_x2AoQ_Z1Z2x2AoQgate%d",i), Form("ID_x2AoQ_Z1Z2x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1 Z2 X2 AoQ, ID X2: X at S2 [mm]");
 
-        hID_x4AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_x2AoQGated/ID_x4AoQ_Z1Z2x2AoQgate%d",i), Form("ID_x4AoQ_Z1Z2x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on  Z1 Z2 X2 AoQ, ID X2: X at S4 [mm]");
+      hID_x4AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_x2AoQGated/ID_x4AoQ_Z1Z2x2AoQgate%d",i), Form("ID_x4AoQ_Z1Z2x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on  Z1 Z2 X2 AoQ, ID X2: X at S4 [mm]");
 
-        hID_ZAoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_x2AoQGated/ID_Z1AoQ_Z1Z2x2AoQgate%d",i), Form("ID_Z1AoQ_Z1Z2x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1 Z2 X2 AoQ Z music");
+      hID_ZAoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_x2AoQGated/ID_Z1AoQ_Z1Z2x2AoQgate%d",i), Form("ID_Z1AoQ_Z1Z2x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1 Z2 X2 AoQ Z music");
 
-        hID_Z1Z2_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/Z1Z2_Z1Z2x2AoQGated/ID_Z1Z2_Z1Z2x2AoQgate%d",i), Form("ID_Z1Z2__Z1Z2x2AoQgate%d",i),1500,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z1", "gate on Z1 Z2 X2 AoQ, ID X2: Z2");
+      hID_Z1Z2_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/Z1Z2_Z1Z2x2AoQGated/ID_Z1Z2_Z1Z2x2AoQgate%d",i), Form("ID_Z1Z2__Z1Z2x2AoQgate%d",i),1500,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z1", "gate on Z1 Z2 X2 AoQ, ID X2: Z2");
 
-        hID_dEdegZ1_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/Z1AoQ_x2AoQGated/ID_dEdegZ1_Z1Z2x2AoQgate%d",i), Form("ID_dEdegZ1_Z1Z2x2AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z1 from MUSIC41", "gate on Z1 Z2 X2 AoQ dE(S2deg) [a.u.]");
+      hID_dEdegZ1_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/Z1AoQ_x2AoQGated/ID_dEdegZ1_Z1Z2x2AoQgate%d",i), Form("ID_dEdegZ1_Z1Z2x2AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z1 from MUSIC41", "gate on Z1 Z2 X2 AoQ dE(S2deg) [a.u.]");
 
-        hID_dEdegoQ_Z1_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/Z1AoQ_x2AoQGated/dEdegoQZ1_Z1Z2x2AoQgate%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x2AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z1 from MUSIC41", " gate on Z1 Z2 X2 AoQ dE(S2deg)/Q [a.u.]");
+      hID_dEdegoQ_Z1_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/Z1AoQ_x2AoQGated/dEdegoQZ1_Z1Z2x2AoQgate%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x2AoQgate%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z1 from MUSIC41", " gate on Z1 Z2 X2 AoQ dE(S2deg)/Q [a.u.]");
 
-        //hID_a2AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1Z2x2AoQGated/ID_a2AoQ_Z1Z2x2AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", "gate on Z1 Z2 X2 AoQ Angle S2 (mrad)");
+      //hID_a2AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1Z2x2AoQGated/ID_a2AoQ_Z1Z2x2AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", "gate on Z1 Z2 X2 AoQ Angle S2 (mrad)");
 
-        hID_a2_Z1Z2x2AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1Z2x2AoQGated/ID_a2_Z1Z2x2AoQgate%d",i), Form("ID_a2_Z1Z2x2AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X2 AoQ Angle S2 (mrad)");
+      hID_a2_Z1Z2x2AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1Z2x2AoQGated/ID_a2_Z1Z2x2AoQgate%d",i), Form("ID_a2_Z1Z2x2AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X2 AoQ Angle S2 (mrad)");
 
-        // hID_a4AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1Z2x2AoQGated/ID_a4AoQ_Z1Z2x2AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", "gate on Z1 Z2 X2 AoQ Angle S4 (mrad)");
+     // hID_a4AoQ_Z1Z2x2AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1Z2x2AoQGated/ID_a4AoQ_Z1Z2x2AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", "gate on Z1 Z2 X2 AoQ Angle S4 (mrad)");
 
-        hID_a4_Z1Z2x2AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1Z2x2AoQGated/ID_a4_Z1Z2x2AoQgate%d",i), Form("ID_a4_Z1Z2x2AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X2 AoQ Angle S4 (mrad)");
+      hID_a4_Z1Z2x2AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1Z2x2AoQGated/ID_a4_Z1Z2x2AoQgate%d",i), Form("ID_a4_Z1Z2x2AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X2 AoQ Angle S4 (mrad)");
 
-        //X4 vs AoQ
-        sprintf(name,"cID_x4AoQ%d",i);
-        cID_x4AoQ[i] = MakePolyCond("FRS_X4_Gates",name,num_ID_x4AoQ,init_ID_x4AoQ[i], hID_x4AoQ->GetName());
+       ///X4 vs AoQ
+      sprintf(name,"cID_x4AoQ%d",i);
+      cID_x4AoQ[i] = MakePolyCond("FRS_X4_Gates",name,num_ID_x4AoQ,init_ID_x4AoQ[i], hID_x4AoQ->GetName());
 
-        hID_x4AoQ_x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_x4AoQGated/ID_x4AoQ_x4AoQgate%d",i), Form("ID_x2AoQ_x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X4 AoQ, ID X4: X at S4 [mm]");
+      hID_x4AoQ_x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_x4AoQGated/ID_x4AoQ_x4AoQgate%d",i), Form("ID_x2AoQ_x2AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X4 AoQ, ID X4: X at S4 [mm]");
 
-        hID_Z1Z2_x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_x4AoQGated/ID_Z1Z2_x4AoQgate%d",i), Form("ID_Z1Z2_x4AoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x4 vs AoQ: MUSIC Z2");
+      hID_Z1Z2_x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_x4AoQGated/ID_Z1Z2_x4AoQgate%d",i), Form("ID_Z1Z2_x4AoQgate%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x4 vs AoQ: MUSIC Z2");
 
-        hID_x4AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_Z1Z2x4AoQGated/ID_x4AoQ_Z1Z2x4AoQgate%d",i), Form("ID_x4AoQ_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on FRS AoQ, ID X4: X at S4 [mm]");
+      hID_x4AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_Z1Z2x4AoQGated/ID_x4AoQ_Z1Z2x4AoQgate%d",i), Form("ID_x4AoQ_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on FRS AoQ, ID X4: X at S4 [mm]");
 
-        hID_x2AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_Z1Z2x4AoQGated/ID_x2AoQ_Z1Z2x4AoQgate%d",i), Form("ID_x2AoQ_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on FRS AoQ, ID X4: X at S2 [mm]");
+      hID_x2AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_Z1Z2x4AoQGated/ID_x2AoQ_Z1Z2x4AoQgate%d",i), Form("ID_x2AoQ_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on FRS AoQ, ID X4: X at S2 [mm]");
 
-        hID_Z1Z2_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/Z1Z2_Z1Z2x2AoQGated/ID_Z1Z2_Z1Z2x4AoQgate%d",i), Form("ID_Z1Z2_Z1Z2x4AoQgate%d",i),750,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", "gate on FRS AoQ, ID X4: Z music42");
+      hID_Z1Z2_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/Z1Z2_Z1Z2x2AoQGated/ID_Z1Z2_Z1Z2x4AoQgate%d",i), Form("ID_Z1Z2_Z1Z2x4AoQgate%d",i),750,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", "gate on FRS AoQ, ID X4: Z music42");
 
-        hID_ZAoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_Z1Z2x4AoQGated/ID_Z1AoQ_Z1Z2x4AoQgate%d",i), Form("ID_Z1AoQ_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_ZAoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_Z1Z2x4AoQGated/ID_Z1AoQ_Z1Z2x4AoQgate%d",i), Form("ID_Z1AoQ_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        hID_dEdegZ1_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/dEdegZ1Z2x4AoQGated/ID_dEdegZ1_Z1Z2x4AoQgate%d",i), Form("ID_dEdegZ1_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_dEdegZ1_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdeg/dEdegZ1Z2x4AoQGated/ID_dEdegZ1_Z1Z2x4AoQgate%d",i), Form("ID_dEdegZ1_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        hID_dEdegoQ_Z1_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/dEdegoQ_x4AoQGated/ID_dEdegoQ_Z1_Z1Z2x4AoQgate%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_dEdegoQ_Z1_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/dEdegoQ/dEdegoQ_x4AoQGated/ID_dEdegoQ_Z1_Z1Z2x4AoQgate%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x4AoQgate%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        // hID_a2AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1Z2x4AoQGated/ID_a2AoQ_Z1Z2x4AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
+     // hID_a2AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_Z1Z2x4AoQGated/ID_a2AoQ_Z1Z2x4AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
 
-        hID_a2_Z1Z2x4AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1Z2x4AoQGated/ID_a2_Z1Z2x4AoQgate%d",i), Form("ID_a2_Z1Z2x4AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X4 AoQ Angle S2 (mrad)");
+      hID_a2_Z1Z2x4AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_Z1Z2x4AoQGated/ID_a2_Z1Z2x4AoQgate%d",i), Form("ID_a2_Z1Z2x4AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X4 AoQ Angle S2 (mrad)");
 
-        //  hID_a4AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1Z2x4AoQGated/ID_a4AoQ_Z1Z2x4AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate%d",i),750,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+    //  hID_a4AoQ_Z1Z2x4AoQgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_Z1Z2x4AoQGated/ID_a4AoQ_Z1Z2x4AoQgate%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate%d",i),750,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
-        hID_a4_Z1Z2x4AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1Z2x4AoQGated/ID_a4_Z1Z2x4AoQgate%d",i), Form("ID_a4_Z1Z2x4AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X4 AoQ Angle S4 (mrad)");
+      hID_a4_Z1Z2x4AoQgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_Z1Z2x4AoQGated/ID_a4_Z1Z2x4AoQgate%d",i), Form("ID_a4_Z1Z2x4AoQgate%d",i), 100, -1000, 1000, "gate on Z1 Z2 X4 AoQ Angle S4 (mrad)");
 
-        ///dE_deg (high charge states)
-        sprintf(name,"dEdegZ1_%d",i);
-        cID_dEdegZ1[i] = MakePolyCond("FRS_dEdegZ1",name, num_ID_dEdegZ1,init_dEdegZ1[i], hdEdeg_Z->GetName());
+       ///dE_deg (high charge states)
+      sprintf(name,"dEdegZ1_%d",i);
+      cID_dEdegZ1[i] = MakePolyCond("FRS_dEdegZ1",name, num_ID_dEdegZ1,init_dEdegZ1[i], hdEdeg_Z->GetName());
 
-        hID_Z1AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_dEdegZ1Gated/ID_Z1_AoQ_dEdegZ1_%d",i), Form("ID_Z1_AoQ_dEdegZ1_%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_Z1AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_dEdegZ1Gated/ID_Z1_AoQ_dEdegZ1_%d",i), Form("ID_Z1_AoQ_dEdegZ1_%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        hID_Z1AoQ_zsame_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_dEdegated/ID_Z1AoQ_zsame_cdEdegZ%d",i), Form("ID_Z1_AoQ_zsame_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_Z1AoQ_zsame_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1AoQ/Z1AoQ_dEdegated/ID_Z1AoQ_zsame_cdEdegZ%d",i), Form("ID_Z1_AoQ_zsame_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        hID_Z1Z2_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_dEdegated/ID_Z1Z2_dEdegZ%d",i), Form("ID_Z1Z2_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", " Z music42");
+      hID_Z1Z2_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/Z1Z2/Z1Z2_dEdegated/ID_Z1Z2_dEdegZ%d",i), Form("ID_Z1Z2_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", " Z music42");
 
-        hID_x2AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_dEdegated/ID_x2AoQ_dEdegZ%d",i), Form("ID_x2AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "X at S2 [mm]");
+      hID_x2AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x2AoQ/x2AoQ_dEdegated/ID_x2AoQ_dEdegZ%d",i), Form("ID_x2AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "X at S2 [mm]");
 
-        hID_x4AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_dEdegated/ID_x4AoQ_dEdegZ%d",i), Form("ID_x4AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "X at S4 [mm]");
+      hID_x4AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/x4AoQ/x4AoQ_dEdegated/ID_x4AoQ_dEdegZ%d",i), Form("ID_x4AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "X at S4 [mm]");
 
-        //hID_a2AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_dEdegZGated/ID_a2AoQ_dEdegZgate%d",i), Form("ID_A2AoQ_dEdegZgate%d",i),720,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
+      //hID_a2AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a2AoQ/a2AoQ_dEdegZGated/ID_a2AoQ_dEdegZgate%d",i), Form("ID_A2AoQ_dEdegZgate%d",i),720,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
 
-        hID_a2_dEdegZgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_dEdegZgated/ID_a2_dEdegZgate%d",i), Form("ID_a2_dEdegZgate%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
+       hID_a2_dEdegZgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a2/a2_dEdegZgated/ID_a2_dEdegZgate%d",i), Form("ID_a2_dEdegZgate%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        // hID_a4AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_dEdegZGated/ID_a4AoQ_dEdegZgate%d",i), Form("ID_A2AoQ_dEdegZgate%d",i),720,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+     // hID_a4AoQ_dEdegZgate[i] = MakeTH2('I', Form("FRS/ID_Gated/a4AoQ/a4AoQ_dEdegZGated/ID_a4AoQ_dEdegZgate%d",i), Form("ID_A2AoQ_dEdegZgate%d",i),720,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
-        hID_a4_dEdegZgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_dEdegZgated/ID_a4_dEdegZgate%d",i), Form("ID_a4_dEdegZgate%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
+      hID_a4_dEdegZgate[i] = MakeTH1('F', Form("FRS/ID_Gated/a4/a4_dEdegZgated/ID_a4_dEdegZgate%d",i), Form("ID_a4_dEdegZgate%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-        ///-----------------------------NOTE MHTDC GATES  ---------------------///
+    ///-----------------------------NOTE MHTDC GATES  ---------------------///
 
-        cID_Z_AoQ_mhtdc[i] = MakePolyCond("FRS_Z1_AoQ_Gates_mhtdc", name, num_ID_Z_AoQ, init_ID_Z_AoQ_mhtdc[i], hID_Z_AoQ_mhtdc->GetName());
+      cID_Z_AoQ_mhtdc[i] = MakePolyCond("FRS_Z1_AoQ_Gates_mhtdc", name, num_ID_Z_AoQ, init_ID_Z_AoQ_mhtdc[i], hID_Z_AoQ_mhtdc->GetName());
         //Z vs AoQ
         hID_ZAoQ_ZAoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQGated_mhtdc/ID_Z1_AoQ_mhtdc_gate%d",i), Form("ID_ZAoQ_ZAoQgate_mhtdc%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Z s2-s4");
 
@@ -1027,9 +1042,9 @@ void EventAnlProc::Make_FRS_Histos(){
 
         //hID_a4AoQ_Z1AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1AoQx4AoQGated/ID_a4AoQ_Z1AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
-        hID_a4_Z1AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_Z1AoQGated/ID_a4_Z1AoQGated_mhtdc%d",i), Form("ID_a4_Z1AoQGate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
+         hID_a4_Z1AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_Z1AoQGated/ID_a4_Z1AoQGated_mhtdc%d",i), Form("ID_a4_Z1AoQGate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-        // Z1 vs Z2
+        /// Z1 vs Z2
         sprintf(name,"cID_Z1_Z2_Gate_mhtdc%d",i);
         cID_Z_Z2gate_mhtdc[i] = MakePolyCond("FRS_Z1_Z2_mhtdc_Gates",name,num_ID_Z_Z2,init_ID_Z_Z2_mhtdc[i], hID_Z_Z2_mhtdc ->GetName());
 
@@ -1045,7 +1060,7 @@ void EventAnlProc::Make_FRS_Histos(){
 
         hID_a2_Z1Z2gate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_Z1Z2Gated/ID_a2_Z1Z2gate_mhtdc%d",i), Form("ID_a2_Z1Z2gate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        //  hID_a4AoQ_Z1Z2gate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1Z2Gated/ID_a4AoQ_Z1Z2gate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+      //  hID_a4AoQ_Z1Z2gate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1Z2Gated/ID_a4AoQ_Z1Z2gate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2gate%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
         hID_a4_Z1Z2gate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_Z1Z2Gated/ID_a4_Z1Z2gate_mhtdc%d",i), Form("ID_a4_Z1Z2gate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
@@ -1054,260 +1069,262 @@ void EventAnlProc::Make_FRS_Histos(){
         hID_dEdegoQ_Z1_Z1Z2gate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdegoQ/dEdegoQZ1_Z1Z2gated/dEdegoQZ1_Z1Z2_mhtdcgated%d",i), Form("dEdegoQZ1_Z1Z2gated%d",i),1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,100., "Z from MUSIC41", "dE(S2deg)/Q [a.u.]");
 
 
-        //        hID_Z1Z2_X4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_Z1Z2_X4AoQGated/ID_Z1AoQ_Z1Z2_X4AoQgate_mhtdc%d",i), Form("ID_Z1AoQ_Z1Z2_X4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music2");
+//        hID_Z1Z2_X4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_Z1Z2_X4AoQGated/ID_Z1AoQ_Z1Z2_X4AoQgate_mhtdc%d",i), Form("ID_Z1AoQ_Z1Z2_X4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music2");
 
 
-        ///X2 AoQ
-        sprintf(name,"cID_x2AoQ_mhtdc%d",i);
-        cID_x2AoQ_mhtdc[i] = MakePolyCond("FRS_X2_Gates_mhtdc",name,num_ID_x2AoQ,init_ID_x2AoQ_mhtdc[i], hID_x2AoQ_mhtdc->GetName());
+      ///X2 AoQ
+      sprintf(name,"cID_x2AoQ_mhtdc%d",i);
+      cID_x2AoQ_mhtdc[i] = MakePolyCond("FRS_X2_Gates_mhtdc",name,num_ID_x2AoQ,init_ID_x2AoQ_mhtdc[i], hID_x2AoQ_mhtdc->GetName());
 
-        hID_x2AoQ_x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_x2AoQGated/ID_x2AoQ_x2AoQgate_mhtdc%d",i), Form("ID_x2AoQ_x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X2 AoQ, ID X2: X at S2 [mm]");
+      hID_x2AoQ_x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_x2AoQGated/ID_x2AoQ_x2AoQgate_mhtdc%d",i), Form("ID_x2AoQ_x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X2 AoQ, ID X2: X at S2 [mm]");
 
-        hID_Z1Z2_x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1Z2/Z1Z2_x2AoQGated/ID_Z1Z2_x2AoQgate_mhtdc%d",i), Form("ID_Z1Z2_x2AoQgate_mhtdc%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x2 vs AoQ: MUSIC Z2");
+      hID_Z1Z2_x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1Z2/Z1Z2_x2AoQGated/ID_Z1Z2_x2AoQgate_mhtdc%d",i), Form("ID_Z1Z2_x2AoQgate_mhtdc%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x2 vs AoQ: MUSIC Z2");
 
-        hID_x2AoQ_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_Z1Z2x2AoQGated/ID_x2AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_x2AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X2AoQ, ID X2: X at S4 [mm]");
+      hID_x2AoQ_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_Z1Z2x2AoQGated/ID_x2AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_x2AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X2AoQ, ID X2: X at S4 [mm]");
 
-        hID_x4AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_Z1Z2x4AoQGated/ID_x4AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_x4AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X2AoQ, ID X2: X at S4 [mm]");
+      hID_x4AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_Z1Z2x4AoQGated/ID_x4AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_x4AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X2AoQ, ID X2: X at S4 [mm]");
 
-        hID_Z1Z2_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/Z1Z2_Z1Z2x2AoQGated/ID_Z1Z2_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_Z1Z2_Z1Z2x2AoQgate_mhtdc%d",i),1500,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", "gate on Z1Z2 X2AoQ, ID X2: Z music41");
+      hID_Z1Z2_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/Z1Z2_Z1Z2x2AoQGated/ID_Z1Z2_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_Z1Z2_Z1Z2x2AoQgate_mhtdc%d",i),1500,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", "gate on Z1Z2 X2AoQ, ID X2: Z music41");
 
-        hID_ZAoQ_x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_Z1Z2x2AoQGated/ID_Z1AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_Z1AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X2AoQ Z music41");
+      hID_ZAoQ_x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_Z1Z2x2AoQGated/ID_Z1AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_Z1AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X2AoQ Z music41");
 
-        hID_dEdegZ1_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdeg/dEdegZ1Z2x2AoQGated/ID_dEdegZ1_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_dEdegZ1_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X2AoQ Z music41");
+      hID_dEdegZ1_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdeg/dEdegZ1Z2x2AoQGated/ID_dEdegZ1_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_dEdegZ1_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X2AoQ Z music41");
 
-        hID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdegoQ/dEdegoQ_x2AoQGated/ID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "gate on Z1Z2 X2AoQ Z music41");
+      hID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdegoQ/dEdegoQ_x2AoQGated/ID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "gate on Z1Z2 X2AoQ Z music41");
 
-        //hID_a2AoQ_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a2AoQ/a2AoQ_Z1Z2x2AoQGated/ID_a2AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
+      //hID_a2AoQ_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a2AoQ/a2AoQ_Z1Z2x2AoQGated/ID_a2AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
 
-        hID_a2_Z1Z2x2AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_Z1Z2x2AoQGated/ID_a2_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_a2_Z1Z2x2AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
+       hID_a2_Z1Z2x2AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_Z1Z2x2AoQGated/ID_a2_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_a2_Z1Z2x2AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        // hID_a4AoQ_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1Z2x2AoQGated/ID_a4AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+     // hID_a4AoQ_Z1Z2x2AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1Z2x2AoQGated/ID_a4AoQ_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x2AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
         hID_a4_Z1Z2x2AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_Z1Z2x2AoQGated/ID_a4_Z1Z2x2AoQgate_mhtdc%d",i), Form("ID_a4_Z1Z2x2AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-        //       hID_dEdegoQ_Z1_x2AoQgate[i] = MakeTH2('D',"FRS/ID_Gated_MHTDC/ID_dEdegoQ_Z1/dEdegoQ_Z1_X2AoQgated%d",i,  1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,50., "Z1 from MUSIC41", "dE(S2deg)/Q [a.u.]");
+//       hID_dEdegoQ_Z1_x2AoQgate[i] = MakeTH2('D',"FRS/ID_Gated_MHTDC/ID_dEdegoQ_Z1/dEdegoQ_Z1_X2AoQgated%d",i,  1000,frs_id->min_z_plot,frs_id->max_z_plot, 1000, 10.,50., "Z1 from MUSIC41", "dE(S2deg)/Q [a.u.]");
 
-        ///X4 vs AoQ
-        sprintf(name,"cID_x4AoQ_mhtdc%d",i);
-        cID_x4AoQ_mhtdc[i] = MakePolyCond("FRS_X4_Gates",name,num_ID_x4AoQ,init_ID_x4AoQ[i], hID_x4AoQ_mhtdc->GetName());
+      ///X4 vs AoQ
+      sprintf(name,"cID_x4AoQ_mhtdc%d",i);
+      cID_x4AoQ_mhtdc[i] = MakePolyCond("FRS_X4_Gates",name,num_ID_x4AoQ,init_ID_x4AoQ[i], hID_x4AoQ_mhtdc->GetName());
 
-        hID_x4AoQ_x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_x4AoQGated/ID_x4AoQ_x4AoQgate_mhtdc%d",i), Form("ID_x2AoQ_x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X4 AoQ, ID X4: X at S4 [mm]");
+      hID_x4AoQ_x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_x4AoQGated/ID_x4AoQ_x4AoQgate_mhtdc%d",i), Form("ID_x2AoQ_x2AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on X4 AoQ, ID X4: X at S4 [mm]");
 
-        hID_Z1Z2_x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1Z2/Z1Z2_x4AoQGated/ID_Z1Z2_x4AoQgate_mhtdc%d",i), Form("ID_Z1Z2_x4AoQgate_mhtdc%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x4 vs AoQ: MUSIC Z2");
+      hID_Z1Z2_x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1Z2/Z1Z2_x4AoQGated/ID_Z1Z2_x4AoQgate_mhtdc%d",i), Form("ID_Z1Z2_x4AoQgate_mhtdc%d", i), 1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"MUSIC Z1", "gate on x4 vs AoQ: MUSIC Z2");
 
-        hID_x4AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_Z1Z2x4AoQGated/ID_x4AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_x4AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X4AoQ, ID X4: X at S4 [mm]");
+      hID_x4AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_Z1Z2x4AoQGated/ID_x4AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_x4AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X4AoQ, ID X4: X at S4 [mm]");
 
-        hID_x2AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_Z1Z2x4AoQGated/ID_x2AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_x2AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X4AoQ, ID X4: X at S2 [mm]");
+      hID_x2AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_Z1Z2x4AoQGated/ID_x2AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_x2AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q s2-s4", "gate on Z1Z2 X4AoQ, ID X4: X at S2 [mm]");
 
-        hID_Z1Z2_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/Z1Z2_Z1Z2x4AoQGated/ID_Z1Z2_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_Z1Z2_Z1Z2x4AoQgate_mhtdc%d",i),1500,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", "gate on Z1Z2 X4AoQ, ID X4: Z music41");
+      hID_Z1Z2_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/Z1Z2_Z1Z2x4AoQGated/ID_Z1Z2_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_Z1Z2_Z1Z2x4AoQgate_mhtdc%d",i),1500,frs_id->min_z_plot,frs_id->max_z_plot, 1500,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", "gate on Z1Z2 X4AoQ, ID X4: Z music41");
 
-        hID_ZAoQ_x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_Z1Z2x4AoQGated/ID_Z1AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_Z1AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X4AoQ Z music41");
+      hID_ZAoQ_x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_Z1Z2x4AoQGated/ID_Z1AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_Z1AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X4AoQ Z music41");
 
-        hID_dEdegZ1_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdeg/dEdegZ1_Z1Z2x4AoQGated/ID_dEdegZ1_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_dEdegZ1_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X4AoQ Z music41");
+      hID_dEdegZ1_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdeg/dEdegZ1_Z1Z2x4AoQGated/ID_dEdegZ1_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_dEdegZ1_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " gate on Z1Z2 X4AoQ Z music41");
 
-        hID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdegoQ/dEdegoQ_x4AoQGated/ID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "gate on Z1Z2 X4AoQ  Z music41");
+      hID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdegoQ/dEdegoQ_x4AoQGated/ID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "gate on Z1Z2 X4AoQ  Z music41");
 
-        //hID_a2AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a2AoQ/a2AoQ_Z1Z2x4AoQGated/ID_a2AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
+      //hID_a2AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a2AoQ/a2AoQ_Z1Z2x4AoQGated/ID_a2AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
 
-        hID_a2_Z1Z2x4AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_Z1Z2x4AoQGated/ID_a2_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_a2_Z1Z2x4AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
+       hID_a2_Z1Z2x4AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_Z1Z2x4AoQGated/ID_a2_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_a2_Z1Z2x4AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        //  hID_a4AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1Z2x4AoQGated/ID_a4AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+    //  hID_a4AoQ_Z1Z2x4AoQgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_Z1Z2x4AoQGated/ID_a4AoQ_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_A2AoQ_Z1Z2x4AoQgate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
-        hID_a4_Z1Z2x4AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_Z1Z2x4AoQGated/ID_a4_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_a4_Z1Z2x4AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
+       hID_a4_Z1Z2x4AoQgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_Z1Z2x4AoQGated/ID_a4_Z1Z2x4AoQgate_mhtdc%d",i), Form("ID_a4_Z1Z2x4AoQgate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-        ///dE_deg (high charge states)
-        sprintf(name,"cID_dEdegZ1_mhtdc%d",i);
-        cID_dEdegZ1_mhtdc[i] = MakePolyCond("FRS_dEdegZ1_mhtdc",name, num_ID_dEdegZ1,init_dEdegZ1[i], hdEdeg_Z_mhtdc->GetName());
+      ///dE_deg (high charge states)
+      sprintf(name,"cID_dEdegZ1_mhtdc%d",i);
+      cID_dEdegZ1_mhtdc[i] = MakePolyCond("FRS_dEdegZ1_mhtdc",name, num_ID_dEdegZ1,init_dEdegZ1[i], hdEdeg_Z_mhtdc->GetName());
 
-        hID_dEdegZ1_dEdegZ1Gated_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdeg/dEdegZ1_dEdegZ1Gated/ID_dEdegZ1_dEdegZ1gate_mhtdc%d",i), Form("ID_dEdegZ1_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Gate on s4 dE vs Z1: Z1 music41");
+      hID_dEdegZ1_dEdegZ1Gated_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/dEdeg/dEdegZ1_dEdegZ1Gated/ID_dEdegZ1_dEdegZ1gate_mhtdc%d",i), Form("ID_dEdegZ1_Z1Z2x4AoQgate_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", "Gate on s4 dE vs Z1: Z1 music41");
 
-        hID_Z1AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_dEdegZ1Gated/ID_Z1_AoQ_dEdegZ1_mhtdc%d",i), Form("ID_Z1_AoQ_dEdegZ1__mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_Z1AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_dEdegZ1Gated/ID_Z1_AoQ_dEdegZ1_mhtdc%d",i), Form("ID_Z1_AoQ_dEdegZ1__mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        hID_Z1AoQ_zsame_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_zsame_dEdegZ1Gated/ID_Z1AoQ_zsame_cdEdegZ_mhtdc%d",i), Form("ID_Z1_AoQ_zsame_cdEdegZ_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
+      hID_Z1AoQ_zsame_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1AoQ/Z1AoQ_zsame_dEdegZ1Gated/ID_Z1AoQ_zsame_cdEdegZ_mhtdc%d",i), Form("ID_Z1_AoQ_zsame_cdEdegZ_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"A/Q s2-s4", " Z music41");
 
-        hID_Z1Z2_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1Z2/Z1Z2_dEdegZ1Gated/ID_Z1Z2_dEdegZ_mhtdc%d",i), Form("ID_Z1Z2_cdEdegZ_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", " Z music42");
+      hID_Z1Z2_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/Z1Z2/Z1Z2_dEdegZ1Gated/ID_Z1Z2_dEdegZ_mhtdc%d",i), Form("ID_Z1Z2_cdEdegZ_mhtdc%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 400,frs_id->min_z_plot,frs_id->max_z_plot,"Z music41", " Z music42");
 
-        hID_x2AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_dEdegZ1Gated/ID_x2AoQ_dEdegZ_mhtdc%d",i), Form("ID_x2AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q mhtdc s2-s4", "X at S2 [mm]");
+      hID_x2AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x2AoQ/x2AoQ_dEdegZ1Gated/ID_x2AoQ_dEdegZ_mhtdc%d",i), Form("ID_x2AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q mhtdc s2-s4", "X at S2 [mm]");
 
-        hID_x4AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_dEdegZ1Gated/ID_x4AoQ_dEdegZ_mhtdc%d",i), Form("ID_x4AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q mhtdc s2-s4", "X at S4 [mm]");
+      hID_x4AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/x4AoQ/x4AoQ_dEdegZ1Gated/ID_x4AoQ_dEdegZ_mhtdc%d",i), Form("ID_x4AoQ_cdEdegZ%d",i),1000,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 200,-100.,100.,"A/Q mhtdc s2-s4", "X at S4 [mm]");
 
-        //hID_a2AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a2AoQ/a2AoQ_dEdegZ1Gated/ID_a2AoQ_dEdegZgategate_mhtdc%d",i), Form("ID_A2AoQ_dEdegZgategate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
+      //hID_a2AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a2AoQ/a2AoQ_dEdegZ1Gated/ID_a2AoQ_dEdegZgategate_mhtdc%d",i), Form("ID_A2AoQ_dEdegZgategate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S2 (mrad)");
 
-        hID_a2_dEdegZgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_dEdegZGated/ID_a2_dEdegZgate_mhtdc%d",i), Form("ID_a2_dEdegZgate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
+       hID_a2_dEdegZgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a2/a2_dEdegZGated/ID_a2_dEdegZgate_mhtdc%d",i), Form("ID_a2_dEdegZgate_mhtdc%d",i), 100, -1000, 1000, "Angle S2 (mrad)");
 
-        // hID_a4AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_dEdegZ1Gated/ID_a4AoQ_dEdegZgategate_mhtdc%d",i), Form("ID_A2AoQ_dEdegZgategate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
+     // hID_a4AoQ_dEdegZgate_mhtdc[i] = MakeTH2('I', Form("FRS/MHTDC/ID_Gated_MHTDC/a4AoQ/a4AoQ_dEdegZ1Gated/ID_a4AoQ_dEdegZgategate_mhtdc%d",i), Form("ID_A2AoQ_dEdegZgategate_mhtdc%d",i),1500,frs_id->min_aoq_plot,frs_id->max_aoq_plot, 1000,-100,100,"A/Q s2-s4", " Angle S4 (mrad)");
 
-        hID_a4_dEdegZgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_dEdegZGated/ID_a4_dEdegZgate_mhtdc%d",i), Form("ID_a4_dEdegZgate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
+       hID_a4_dEdegZgate_mhtdc[i] = MakeTH1('F', Form("FRS/MHTDC/ID_Gated_MHTDC/a4/a4_dEdegZGated/ID_a4_dEdegZgate_mhtdc%d",i), Form("ID_a4_dEdegZgate_mhtdc%d",i), 100, -1000, 1000, "Angle S4 (mrad)");
 
-    }
-} //end of Make_FRS_Histos
+        }
+}
 
       //---------------------------------------------------------//
 
 void EventAnlProc::Process_FRS_Histos(EventUnpackStore* pInput, EventAnlStore* pOutput){
-
     FRS_time_mins = 0;
 
     ///FRS gain matching has been moved to FRS_Detector_System.cxx AKM Jan22
     if(pOutput->pFRS_WR>0) FRS_time_mins =(pOutput->pFRS_WR/60E9)-26900000;
 
     ///Defined in the setup file.
-    if(FRS_CORR==true) {
-        FRS_AoQ = FRS_AoQ_corr;
-        for (int i=0; i<10;i++) {
-            FRS_AoQ_mhtdc[i] = FRS_AoQ_corr_mhtdc[i];
-        }
-    }
+     if(FRS_CORR==true) {
+         FRS_AoQ = FRS_AoQ_corr;
+         for (int i=0; i<10;i++) FRS_AoQ_mhtdc[i] = FRS_AoQ_corr_mhtdc[i];
+     }
 
-    //  if(MHTDC_OR_TAC==0){
-    pOutput->pFRS_AoQ = FRS_AoQ;
-    pOutput->pFRS_z = FRS_z;
-    pOutput->pFRS_z2 = FRS_z2;
-    pOutput->pFRS_beta = FRS_beta;
-    pOutput->pFRS_dEdeg = FRS_dEdeg;
-    pOutput->pFRS_dEdegoQ = FRS_dEdegoQ;
+   //  if(MHTDC_OR_TAC==0){
+     pOutput->pFRS_AoQ = FRS_AoQ;
+     pOutput->pFRS_z = FRS_z;
+     pOutput->pFRS_z2 = FRS_z2;
+     pOutput->pFRS_beta = FRS_beta;
+     pOutput->pFRS_dEdeg = FRS_dEdeg;
+     pOutput->pFRS_dEdegoQ = FRS_dEdegoQ;
     // }
 
-    //else if (MHTDC_OR_TAC==1){
-    for (int i=0; i<10;i++){
-        pOutput->pFRS_AoQ_mhtdc[i] = FRS_AoQ_mhtdc[i];
-        pOutput->pFRS_z_mhtdc[i] = FRS_z_mhtdc[i];
-        pOutput->pFRS_z2_mhtdc[i] = FRS_z2_mhtdc[i];
+     //else if (MHTDC_OR_TAC==1){
+       for (int i=0; i<10;i++){
+     pOutput->pFRS_AoQ_mhtdc[i] = FRS_AoQ_mhtdc[i];
+     pOutput->pFRS_z_mhtdc[i] = FRS_z_mhtdc[i];
+     pOutput->pFRS_z2_mhtdc[i] = FRS_z2_mhtdc[i];
 
-        pOutput->pFRS_beta_mhtdc[i] = FRS_beta_mhtdc[i];
-        pOutput->pFRS_dEdeg_mhtdc[i] = FRS_dEdeg_mhtdc[i];
-        pOutput->pFRS_dEdegoQ_mhtdc[i] = FRS_dEdegoQ_mhtdc[i];
-    }
-    //      else {cout<<"TOF vs TAC Parameter not set correctly in DESPEC_Setup_File.h"<<endl; exit(0);}
+     pOutput->pFRS_beta_mhtdc[i] = FRS_beta_mhtdc[i];
+     pOutput->pFRS_dEdeg_mhtdc[i] = FRS_dEdeg_mhtdc[i];
+     pOutput->pFRS_dEdegoQ_mhtdc[i] = FRS_dEdegoQ_mhtdc[i];
+     }
+//      else {cout<<"TOF vs TAC Parameter not set correctly in DESPEC_Setup_File.h"<<endl; exit(0);}
 
-    pOutput->pFRS_ID_x2 = FRS_ID_x2;
-    pOutput->pFRS_ID_y2 = FRS_ID_y2;
-    pOutput->pFRS_ID_a2 = FRS_ID_a2;
-    pOutput->pFRS_ID_b2 = FRS_ID_b2;
+     pOutput->pFRS_ID_x2 = FRS_ID_x2;
+     pOutput->pFRS_ID_y2 = FRS_ID_y2;
+     pOutput->pFRS_ID_a2 = FRS_ID_a2;
+     pOutput->pFRS_ID_b2 = FRS_ID_b2;
 
-    pOutput->pFRS_ID_x4 = FRS_ID_x4;
-    pOutput->pFRS_ID_y4 = FRS_ID_y4;
-    pOutput->pFRS_ID_a4 = FRS_ID_a4;
-    pOutput->pFRS_ID_b4 = FRS_ID_b4;
+     pOutput->pFRS_ID_x4 = FRS_ID_x4;
+     pOutput->pFRS_ID_y4 = FRS_ID_y4;
+     pOutput->pFRS_ID_a4 = FRS_ID_a4;
+     pOutput->pFRS_ID_b4 = FRS_ID_b4;
 
 
-    for(int l=0; l<12;l++){
-        pOutput->pFRS_sci_l[l] = FRS_sci_l[l];
-        pOutput->pFRS_sci_r[l] = FRS_sci_r[l];
-        pOutput->pFRS_sci_e[l] = FRS_sci_e[l];
-        pOutput->pFRS_sci_tx[l] = FRS_sci_tx[l];
-        pOutput->pFRS_sci_x[l] = FRS_sci_x[l];
-    }
+     for(int l=0; l<12;l++){
+     pOutput->pFRS_sci_l[l] = FRS_sci_l[l];
+     pOutput->pFRS_sci_r[l] = FRS_sci_r[l];
+     pOutput->pFRS_sci_e[l] = FRS_sci_e[l];
+     pOutput->pFRS_sci_tx[l] = FRS_sci_tx[l];
+     pOutput->pFRS_sci_x[l] = FRS_sci_x[l];
 
-    if(pOutput->pFRS_WR > 0) pOutput->pt_lastSC41 = pOutput->pFRS_WR;
+     }
 
-    //-------------------------- FRS TAC Histograms and PID Gates ---------------------//
+     if(pOutput->pFRS_WR > 0) pOutput->pt_lastSC41 = pOutput->pFRS_WR;
 
-    //Z and A/Q Time in mins
-    if(FRS_z>0 && FRS_time_mins>0)hID_Z1_vs_T->Fill(FRS_time_mins,FRS_z);
+//-------------------------- FRS TAC Histograms and PID Gates ---------------------//
 
-    if(FRS_z>0 && FRS_time_mins>0)hID_AoQ_vs_T->Fill(FRS_time_mins,FRS_AoQ);
+      ///Z and A/Q Time in mins
+   if(FRS_z>0 && FRS_time_mins>0)hID_Z1_vs_T->Fill(FRS_time_mins,FRS_z);
 
-    //AoQ vs Z
+   if(FRS_z>0 && FRS_time_mins>0)hID_AoQ_vs_T->Fill(FRS_time_mins,FRS_AoQ);
 
-    if(pInput->fFRS_AoQ>0 && FRS_z>0) hID_Z_AoQ->Fill(pInput->fFRS_AoQ, FRS_z);
+     ///AoQ vs Z
 
-    if(pInput->fFRS_AoQ_corr>0 && FRS_z>0) hID_Z_AoQ_corr->Fill(pInput->fFRS_AoQ_corr, FRS_z);  //S2-S4 correlated
+   if(pInput->fFRS_AoQ>0 && FRS_z>0) hID_Z_AoQ->Fill(pInput->fFRS_AoQ, FRS_z);
 
-    //Z1 Z2
-    if(FRS_z>0 && FRS_z2>0) hID_Z_Z2->Fill(FRS_z,FRS_z2);
+   if(pInput->fFRS_AoQ_corr>0 && FRS_z>0)   hID_Z_AoQ_corr->Fill(pInput->fFRS_AoQ_corr, FRS_z);  //S2-S4 correlated
 
-    if(TMath::Abs(FRS_z-FRS_z2)<0.4){
-        hID_Z_AoQ_zsame->Fill(FRS_AoQ, FRS_z);
-        hID_x4AoQ_zsame->Fill(FRS_AoQ, FRS_ID_x4);
-        hID_x2AoQ_zsame->Fill(FRS_AoQ, FRS_ID_x2);
-    }
+       ///Z1 Z2
+   if(FRS_z>0 && FRS_z2>0) hID_Z_Z2->Fill(FRS_z,FRS_z2);
+
+     if(TMath::Abs(FRS_z-FRS_z2)<0.4)
+            {
+              hID_Z_AoQ_zsame->Fill(FRS_AoQ, FRS_z);
+              hID_x4AoQ_zsame->Fill(FRS_AoQ, FRS_ID_x4);
+              hID_x2AoQ_zsame->Fill(FRS_AoQ, FRS_ID_x2);
+            }
 
     ///AoQ vs X2
-    if(FRS_AoQ>0 && FRS_ID_x2>-100 && FRS_ID_x2<100)  hID_x2AoQ->Fill(FRS_AoQ, FRS_ID_x2);
-    if(FRS_AoQ>0 && FRS_ID_x4>-100 && FRS_ID_x4<100)  hID_x4AoQ->Fill(FRS_AoQ, FRS_ID_x4);
+   if(FRS_AoQ>0 && FRS_ID_x2>-100 && FRS_ID_x2<100)  hID_x2AoQ->Fill(FRS_AoQ, FRS_ID_x2);
+   if(FRS_AoQ>0 && FRS_ID_x4>-100 && FRS_ID_x4<100)  hID_x4AoQ->Fill(FRS_AoQ, FRS_ID_x4);
 
-    //Charge states
-    if(FRS_z>0 && FRS_dEdegoQ!=0)   hdEdegoQ_Z->Fill(FRS_z, FRS_dEdegoQ);
-    if(FRS_z>0 && FRS_dEdeg!=0)  hdEdeg_Z->Fill(FRS_z, FRS_dEdeg);
+   ///Charge states
+   if(FRS_z>0 && FRS_dEdegoQ!=0)   hdEdegoQ_Z->Fill(FRS_z, FRS_dEdegoQ);
+   if(FRS_z>0 && FRS_dEdeg!=0)  hdEdeg_Z->Fill(FRS_z, FRS_dEdeg);
 
     //Angles vs AoQ
     if(FRS_AoQ!=0 && FRS_ID_a2!=0)hID_a2AoQ->Fill(FRS_AoQ,FRS_ID_a2);
     if(FRS_AoQ!=0 && FRS_ID_a4!=0)hID_a4AoQ->Fill(FRS_AoQ,FRS_ID_a4);
 
-    //Z vs Energy loss Music 2
+   //Z vs Energy loss Music 2
 
-    if(FRS_z!=0 && pInput->fFRS_Music_dE[1]!=0) hID_Z_dE2->Fill(FRS_z,pInput->fFRS_Music_dE[1]);
+    if(FRS_z!=0 && pInput->fFRS_Music_dE[1]!=0)hID_Z_dE2->Fill(FRS_z,pInput->fFRS_Music_dE[1]);
 
-    //X2 vs X4
-    if(FRS_ID_x2!=0&&FRS_ID_x4!=0 ) hID_x2x4->Fill(FRS_ID_x2, FRS_ID_x4);
-    if(FRS_AoQ!=0 && FRS_sci_e[5]!=0) hID_SC41dE_AoQ->Fill(FRS_AoQ, FRS_sci_e[5]);
+   //X2 vs X4
+     if(FRS_ID_x2!=0&&FRS_ID_x4!=0 ) hID_x2x4->Fill(FRS_ID_x2, FRS_ID_x4);
+     if(FRS_AoQ!=0 && FRS_sci_e[5]!=0) hID_SC41dE_AoQ->Fill(FRS_AoQ, FRS_sci_e[5]);
 
-    if(FRS_sci_tof2!=0 && pInput->fFRS_Music_dE[0]!=0) {
-        hID_dEToF->Fill(FRS_sci_tof2, pInput->fFRS_Music_dE[0]);
-        //cout<<"FRS_sci_tof2 " <<FRS_sci_tof2 << " pInput->fFRS_Music_dE[0] " <<pInput->fFRS_Music_dE[0] << endl;
-    }
+     if(FRS_sci_tof2!=0 && pInput->fFRS_Music_dE[0]!=0) {
+         hID_dEToF->Fill(FRS_sci_tof2, pInput->fFRS_Music_dE[0]);
+         //cout<<"FRS_sci_tof2 " <<FRS_sci_tof2 << " pInput->fFRS_Music_dE[0] " <<pInput->fFRS_Music_dE[0] << endl;
+     }
 
-    if(FRS_z!=0 && FRS_ID_x2!=0) hID_x2z->Fill(FRS_z, FRS_ID_x2);
-    if(FRS_z!=0 && FRS_ID_x4!=0) hID_x4z->Fill(FRS_z, FRS_ID_x4);
+     if(FRS_z!=0 && FRS_ID_x2!=0) hID_x2z->Fill(FRS_z, FRS_ID_x2);
+     if(FRS_z!=0 && FRS_ID_x4!=0) hID_x4z->Fill(FRS_z, FRS_ID_x4);
 
-    if(FRS_ID_x4!=0 && pInput->fFRS_Music_dE[0]!=0) hID_E_Xs4->Fill(FRS_ID_x4,pInput->fFRS_Music_dE[0]);
-    if(FRS_ID_x2!=0 && pInput->fFRS_Music_dE[0]!=0)hID_E_Xs2->Fill(FRS_ID_x2,pInput->fFRS_Music_dE[0]);
+     if(FRS_ID_x4!=0 && pInput->fFRS_Music_dE[0]!=0) hID_E_Xs4->Fill(FRS_ID_x4,pInput->fFRS_Music_dE[0]);
+     if(FRS_ID_x2!=0 && pInput->fFRS_Music_dE[0]!=0)hID_E_Xs2->Fill(FRS_ID_x2,pInput->fFRS_Music_dE[0]);
 
-    if(FRS_ID_x2!=0 && FRS_ID_a2!=0)hID_x2a2->Fill(FRS_ID_x2,FRS_ID_a2);
-    if(FRS_ID_y2!=0 && FRS_ID_b2!=0)hID_y2b2->Fill(FRS_ID_y2,FRS_ID_b2);
-    if(FRS_ID_x4!=0 && FRS_ID_a4!=0)hID_x4a4->Fill(FRS_ID_x4,FRS_ID_a4);
-    if(FRS_ID_x4!=0 && FRS_ID_b4!=0) hID_y4b4->Fill(FRS_ID_y4,FRS_ID_b4);
+     if(FRS_ID_x2!=0 && FRS_ID_a2!=0)hID_x2a2->Fill(FRS_ID_x2,FRS_ID_a2);
+     if(FRS_ID_y2!=0 && FRS_ID_b2!=0)hID_y2b2->Fill(FRS_ID_y2,FRS_ID_b2);
+     if(FRS_ID_x4!=0 && FRS_ID_a4!=0)hID_x4a4->Fill(FRS_ID_x4,FRS_ID_a4);
+     if(FRS_ID_x4!=0 && FRS_ID_b4!=0) hID_y4b4->Fill(FRS_ID_y4,FRS_ID_b4);
 
 
-    if(FRS_z!=0 && FRS_sci_l[2]!=0 && FRS_sci_r[2]!=0)hID_Z_Sc21E->Fill(FRS_z, sqrt(FRS_sci_l[2]*FRS_sci_r[2]));
+     if(FRS_z!=0 && FRS_sci_l[2]!=0 && FRS_sci_r[2]!=0)hID_Z_Sc21E->Fill(FRS_z, sqrt(FRS_sci_l[2]*FRS_sci_r[2]));
 
-    //Define PID Gates
-    for(int g=0; g<MAX_FRS_GATE; g++){
+   ///Define PID Gates
+     for(int g=0; g<MAX_FRS_GATE; g++){
 
-        //Z1 vs A/Q
+         ///Z1 vs A/Q
         if(cID_Z_AoQ[g]->Test(FRS_AoQ, FRS_z)==true){
-            pOutput->pFRS_ZAoQ_pass[g] =true;
-            hID_ZAoQ_ZAoQgate[g]->Fill(FRS_AoQ, FRS_z);
-            hID_Z1Z2_ZAoQgate[g]->Fill(FRS_z, FRS_z2);
-            hID_x2AoQ_Z1AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
-            hID_x4AoQ_Z1AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
-            hID_dEdegZ1_Z1AoQgate[g]->Fill(FRS_z,FRS_dEdeg);
-            hID_dEdegoQ_Z1_Z1AoQgate[g]->Fill(FRS_z,FRS_dEdegoQ);
-            hID_a2_Z1AoQgate[g]->Fill(FRS_ID_a2);
-            hID_a4_Z1AoQgate[g]->Fill(FRS_ID_a4);
-        }
-
-        //GATE: Z1 vs Z2
-        if(cID_Z_Z2gate[g]->Test(FRS_z, FRS_z2)==true){
-            pOutput->pFRS_Z_Z2_pass[g] = true;
-
-            hID_dEdegZ1_Z1Z2gate[g]->Fill(FRS_z,FRS_dEdeg);
-            hID_dEdegoQ_Z1_Z1Z2gate[g]->Fill(FRS_z,FRS_dEdegoQ);
-            hID_Z1_Z2gate[g]->Fill(FRS_z,FRS_z2);
-            hID_a2_Z1Z2gate[g]->Fill(FRS_ID_a2);
-            hID_a4_Z1Z2gate[g]->Fill(FRS_ID_a4);
-
-            if(FRS_AoQ>1 && FRS_AoQ<3 &&   FRS_ID_x2 > -100 && FRS_ID_x2<100){
-                hID_x2AoQ_Z1Z2gate[g]->Fill(FRS_AoQ, FRS_ID_x2);
-            }
-            if(FRS_AoQ>1 && FRS_AoQ<3   && FRS_ID_x4 > -100 && FRS_ID_x4<100){
-                hID_x4AoQ_Z1Z2gate[g]->Fill(FRS_AoQ, FRS_ID_x4);
+          pOutput->pFRS_ZAoQ_pass[g] =true;
+          hID_ZAoQ_ZAoQgate[g]->Fill(FRS_AoQ, FRS_z);
+          hID_Z1Z2_ZAoQgate[g]->Fill(FRS_z, FRS_z2);
+          hID_x2AoQ_Z1AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
+          hID_x4AoQ_Z1AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
+          hID_dEdegZ1_Z1AoQgate[g]->Fill(FRS_z,FRS_dEdeg);
+          hID_dEdegoQ_Z1_Z1AoQgate[g]->Fill(FRS_z,FRS_dEdegoQ);
+          hID_a2_Z1AoQgate[g]->Fill(FRS_ID_a2);
+          hID_a4_Z1AoQgate[g]->Fill(FRS_ID_a4);
             }
 
-            if(FRS_AoQ>1 && FRS_AoQ<3){
-                hID_ZAoQ_Z1Z2gate[g] ->Fill(FRS_AoQ, FRS_z);
+          ///GATE: Z1 vs Z2
+        if(cID_Z_Z2gate[g]->Test(FRS_z, FRS_z2)==true)
+            {
+                pOutput->pFRS_Z_Z2_pass[g] = true;
+
+                hID_dEdegZ1_Z1Z2gate[g]->Fill(FRS_z,FRS_dEdeg);
+                hID_dEdegoQ_Z1_Z1Z2gate[g]->Fill(FRS_z,FRS_dEdegoQ);
+                hID_Z1_Z2gate[g]->Fill(FRS_z,FRS_z2);
+                hID_a2_Z1Z2gate[g]->Fill(FRS_ID_a2);
+                hID_a4_Z1Z2gate[g]->Fill(FRS_ID_a4);
+
+                if(FRS_AoQ>1 && FRS_AoQ<3 &&   FRS_ID_x2 > -100 && FRS_ID_x2<100){
+                   hID_x2AoQ_Z1Z2gate[g]->Fill(FRS_AoQ, FRS_ID_x2);
+
+                }
+                if(FRS_AoQ>1 && FRS_AoQ<3   && FRS_ID_x4 > -100 && FRS_ID_x4<100){
+                   hID_x4AoQ_Z1Z2gate[g]->Fill(FRS_AoQ, FRS_ID_x4);
+                   }
+
+                if(FRS_AoQ>1 && FRS_AoQ<3){
+                   hID_ZAoQ_Z1Z2gate[g] ->Fill(FRS_AoQ, FRS_z);
+                   }
             }
-        }
 
 
-        //GATE: ID vs x2AoQ
-        if(cID_x2AoQ[g]->Test(FRS_AoQ, FRS_ID_x2)==true){
-            pOutput->pFRS_x2AoQ_pass[g] = true;
-            hID_x2AoQ_x2AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
-            hID_Z1Z2_x2AoQgate[g]->Fill(FRS_z, FRS_z2);
-            //Z1 Z2 + x2AoQ
-            //The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
+         ///GATE: ID vs x2AoQ
+      if(cID_x2AoQ[g]->Test(FRS_AoQ, FRS_ID_x2)==true)
+        {
+          pOutput->pFRS_x2AoQ_pass[g] = true;
+          hID_x2AoQ_x2AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
+          hID_Z1Z2_x2AoQgate[g]->Fill(FRS_z, FRS_z2);
+            ///Z1 Z2 + x2AoQ
+           ///The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
             if(cID_Z_Z2gate[fCorrel->GZ1Z2_Gate]->Test(FRS_z, FRS_z2)==true){
                 if(cID_x2AoQ[g]->Test(FRS_AoQ, FRS_ID_x2)==true){
                     hID_x2AoQ_Z1Z2x2AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
@@ -1317,107 +1334,109 @@ void EventAnlProc::Process_FRS_Histos(EventUnpackStore* pInput, EventAnlStore* p
                     hID_dEdegoQ_Z1_Z1Z2x2AoQgate[g]->Fill(FRS_z,FRS_dEdegoQ);
                     hID_a2_Z1Z2x2AoQgate[g]->Fill(FRS_ID_a2);
                     hID_a4_Z1Z2x2AoQgate[g]->Fill(FRS_ID_a4);
-                }
-            }
 
-            //GATE: ID vs x4AoQ
-            if(cID_x4AoQ[g]->Test(FRS_AoQ, FRS_ID_x4)==true){
+            }
+        }
+
+        ///GATE: ID vs x4AoQ
+      if(cID_x4AoQ[g]->Test(FRS_AoQ, FRS_ID_x4)==true)
+        {
             pOutput->pFRS_x4AoQ_pass[g] = true;
-            hID_x4AoQ_x4AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
-            hID_Z1Z2_x4AoQgate[g]->Fill(FRS_z, FRS_z2);
-
-            //Z1 Z2 + x4AoQ
-            //The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
-            if(cID_Z_Z2gate[fCorrel->GZ1Z2_Gate]->Test(FRS_z, FRS_z2)==true){
-                hID_x2AoQ_Z1Z2x4AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
-                hID_x4AoQ_Z1Z2x4AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
-                hID_ZAoQ_Z1Z2x4AoQgate[g]->Fill(FRS_AoQ, FRS_z);
-                hID_dEdegZ1_Z1Z2x4AoQgate[g]->Fill(FRS_z,FRS_dEdeg);
-                hID_dEdegoQ_Z1_Z1Z2x4AoQgate[g]->Fill(FRS_z,FRS_dEdegoQ);
-                hID_a2_Z1Z2x4AoQgate[g]->Fill(FRS_ID_a2);
-                hID_a4_Z1Z2x4AoQgate[g]->Fill(FRS_ID_a4);
-            }
+             hID_x4AoQ_x4AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
+              hID_Z1Z2_x4AoQgate[g]->Fill(FRS_z, FRS_z2);
+            ///Z1 Z2 + x4AoQ
+            ///The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
+            if(cID_Z_Z2gate[fCorrel->GZ1Z2_Gate]->Test(FRS_z, FRS_z2)==true)
+            {
+                     hID_x2AoQ_Z1Z2x4AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
+                     hID_x4AoQ_Z1Z2x4AoQgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
+                     hID_ZAoQ_Z1Z2x4AoQgate[g]->Fill(FRS_AoQ, FRS_z);
+                     hID_dEdegZ1_Z1Z2x4AoQgate[g]->Fill(FRS_z,FRS_dEdeg);
+                     hID_dEdegoQ_Z1_Z1Z2x4AoQgate[g]->Fill(FRS_z,FRS_dEdegoQ);
+                     hID_a2_Z1Z2x4AoQgate[g]->Fill(FRS_ID_a2);
+                     hID_a4_Z1Z2x4AoQgate[g]->Fill(FRS_ID_a4);
+                }
         }
 
-            //GATE: Energy loss S2 vs Z (Charge states)
-            // dEdeg_vs_Z check
-            if(cID_dEdegZ1[g]->Test(FRS_z,FRS_dEdeg)==true){
-            pOutput->pFRS_dEdegZ1_pass[g]=true;
+            ///GATE: Energy loss S2 vs Z (Charge states)
+      if(cID_dEdegZ1[g]->Test(FRS_z,FRS_dEdeg)==true){ // dEdeg_vs_Z check
+          pOutput->pFRS_dEdegZ1_pass[g]=true;
 
-            hID_Z1AoQ_dEdegZgate[g]->Fill(FRS_AoQ, FRS_z);
-            hID_Z1Z2_dEdegZgate[g]->Fill(FRS_z, FRS_z2);
-            hID_x2AoQ_dEdegZgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
-            hID_x4AoQ_dEdegZgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
-            hID_a2_dEdegZgate[g]->Fill(FRS_ID_a2);
-            hID_a4_dEdegZgate[g]->Fill(FRS_ID_a4);
+          hID_Z1AoQ_dEdegZgate[g]->Fill(FRS_AoQ, FRS_z);
+          hID_Z1Z2_dEdegZgate[g]->Fill(FRS_z, FRS_z2);
+          hID_x2AoQ_dEdegZgate[g]->Fill(FRS_AoQ, FRS_ID_x2);
+          hID_x4AoQ_dEdegZgate[g]->Fill(FRS_AoQ, FRS_ID_x4);
+          hID_a2_dEdegZgate[g]->Fill(FRS_ID_a2);
+          hID_a4_dEdegZgate[g]->Fill(FRS_ID_a4);
 
-            if(fabs(FRS_z2-FRS_z)<0.4){ // in addition Z same
-                hID_Z1AoQ_zsame_dEdegZgate[g]->Fill(FRS_AoQ, FRS_z);
-                // hID_Z1_AoQcorr_zsame_dEdegZgate[g]->Fill(FRS_AoQ_corr, FRS_z);
-            }
+    if(fabs(FRS_z2-FRS_z)<0.4){ // in addition Z same
+      hID_Z1AoQ_zsame_dEdegZgate[g]->Fill(FRS_AoQ, FRS_z);
+     // hID_Z1_AoQcorr_zsame_dEdegZgate[g]->Fill(FRS_AoQ_corr, FRS_z);
+          }
         }
-
-        }
+      }
     }
 
-    //-------------------------- FRS MHTDC Histograms and PID Gates ---------------------//
-    /// Loop on MHTDC arrays
-    for (int i=0; i<MAX_MHTDC_HITS; i++) {
-        ///Z1 vs Time
-        if(FRS_z_mhtdc[i]>0 && FRS_time_mins>0) hID_Z_mhtdc_T->Fill(FRS_time_mins, FRS_z_mhtdc[i]);
 
-        ///AoQ vs Time
-        if(FRS_AoQ_mhtdc[i]>0 && FRS_time_mins>0) hID_AoQ_mhtdc_T->Fill(FRS_time_mins, FRS_AoQ_mhtdc[i]);
+//-------------------------- FRS MHTDC Histograms and PID Gates ---------------------//
+/// Loop on MHTDC arrays
+for (int i=0; i<10 ; i++) {
+    ///Z1 vs Time
+    if(FRS_z_mhtdc[i]>0 && FRS_time_mins>0) hID_Z_mhtdc_T->Fill(FRS_time_mins, FRS_z_mhtdc[i]);
 
-        ///AoQ vs Z
-        if(pInput->fFRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0) hID_Z_AoQ_mhtdc->Fill(pInput->fFRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
-        if(pInput->fFRS_AoQ_corr_mhtdc[i]>0 && FRS_z_mhtdc[i]>0) hID_Z_AoQ_corr_mhtdc->Fill(pInput->fFRS_AoQ_corr_mhtdc[i], FRS_z_mhtdc[i]);
+    ///AoQ vs Time
+    if(FRS_AoQ_mhtdc[i]>0 && FRS_time_mins>0) hID_AoQ_mhtdc_T->Fill(FRS_time_mins, FRS_AoQ_mhtdc[i]);
 
-        //Z1 Z2
-        if(FRS_z_mhtdc[i]>0 && FRS_z2_mhtdc[i]>0) hID_Z_Z2_mhtdc->Fill(FRS_z_mhtdc[i],FRS_z2_mhtdc[i]);
+     ///AoQ vs Z
+    if(pInput->fFRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0) hID_Z_AoQ_mhtdc->Fill(pInput->fFRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+    if(pInput->fFRS_AoQ_corr_mhtdc[i]>0 && FRS_z_mhtdc[i]>0) hID_Z_AoQ_corr_mhtdc->Fill(pInput->fFRS_AoQ_corr_mhtdc[i], FRS_z_mhtdc[i]);
 
-        if(TMath::Abs(FRS_z_mhtdc[i]-FRS_z2_mhtdc[i])<0.4){
-            hID_Z_AoQ_zsame_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
-            hID_x4AoQ_zsame_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-            hID_x2AoQ_zsame_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
-        }
+    //Z1 Z2
+    if(FRS_z_mhtdc[i]>0 && FRS_z2_mhtdc[i]>0) hID_Z_Z2_mhtdc->Fill(FRS_z_mhtdc[i],FRS_z2_mhtdc[i]);
 
-        ///AoQ vs X2
-        if(FRS_AoQ_mhtdc[i]>0 && FRS_ID_x2>-100 && FRS_ID_x2<100)  hID_x2AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+     if(TMath::Abs(FRS_z_mhtdc[i]-FRS_z2_mhtdc[i])<0.4)
+            {
+              hID_Z_AoQ_zsame_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+              hID_x4AoQ_zsame_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+              hID_x2AoQ_zsame_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+            }
 
-        if(FRS_AoQ_mhtdc[i]>0 && FRS_ID_x4>-100 && FRS_ID_x4<100)  hID_x4AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-        //Charge states
-        if(FRS_z_mhtdc[i]>0 && FRS_dEdegoQ!=0)   hdEdegoQ_Z_mhtdc->Fill(FRS_z_mhtdc[i], FRS_dEdegoQ_mhtdc[i]);
-        if(FRS_z_mhtdc[i]>0 && FRS_dEdeg!=0)  hdEdeg_Z_mhtdc->Fill(FRS_z_mhtdc[i], FRS_dEdegoQ_mhtdc[i]);
+    ///AoQ vs X2
+    if(FRS_AoQ_mhtdc[i]>0 && FRS_ID_x2>-100 && FRS_ID_x2<100)  hID_x2AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
 
-        //Angles vs AoQ
-        if(FRS_AoQ_mhtdc[i]!=0 && FRS_ID_a2!=0) hID_a2AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i],FRS_ID_a2);
-        if(FRS_AoQ_mhtdc[i]!=0 && FRS_ID_a4!=0) hID_a4AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i],FRS_ID_a4);
+    if(FRS_AoQ_mhtdc[i]>0 && FRS_ID_x4>-100 && FRS_ID_x4<100)  hID_x4AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+    ///Charge states
+    if(FRS_z_mhtdc[i]>0 && FRS_dEdegoQ!=0)   hdEdegoQ_Z_mhtdc->Fill(FRS_z_mhtdc[i], FRS_dEdegoQ_mhtdc[i]);
+    if(FRS_z_mhtdc[i]>0 && FRS_dEdeg!=0)  hdEdeg_Z_mhtdc->Fill(FRS_z_mhtdc[i], FRS_dEdegoQ_mhtdc[i]);
 
-        if(FRS_z_mhtdc[i]!=0 && pInput->fFRS_Music_dE[1]!=0) hID_Z_dE2_mhtdc->Fill(FRS_z_mhtdc[i],pInput->fFRS_Music_dE[1]);
+    //Angles vs AoQ
+    if(FRS_AoQ_mhtdc[i]!=0 && FRS_ID_a2!=0) hID_a2AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i],FRS_ID_a2);
+    if(FRS_AoQ_mhtdc[i]!=0 && FRS_ID_a4!=0) hID_a4AoQ_mhtdc->Fill(FRS_AoQ_mhtdc[i],FRS_ID_a4);
 
-        if(FRS_z_mhtdc[i]!=0 && FRS_sci_l[2]!=0 && FRS_sci_r[2]!=0)hID_Z_Sc21E_mhtdc->Fill(FRS_z_mhtdc[i], sqrt(FRS_sci_l[2]*FRS_sci_r[2]));
+     if(FRS_z_mhtdc[i]!=0 && pInput->fFRS_Music_dE[1]!=0) hID_Z_dE2_mhtdc->Fill(FRS_z_mhtdc[i],pInput->fFRS_Music_dE[1]);
 
-        hID_x2z_mhtdc->Fill(FRS_z_mhtdc[i],FRS_ID_x2);
+     if(FRS_z_mhtdc[i]!=0 && FRS_sci_l[2]!=0 && FRS_sci_r[2]!=0)hID_Z_Sc21E_mhtdc->Fill(FRS_z_mhtdc[i], sqrt(FRS_sci_l[2]*FRS_sci_r[2]));
 
-        hID_x4z_mhtdc->Fill(FRS_z_mhtdc[i],FRS_ID_x4);
+     hID_x2z_mhtdc->Fill(FRS_z_mhtdc[i],FRS_ID_x2);
 
-        // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i==0) hID_Z_AoQ_mhtdc_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+     hID_x4z_mhtdc->Fill(FRS_z_mhtdc[i],FRS_ID_x4);
 
-        // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i>0) hID_Z_AoQ_mhtdc_excluding_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+  // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i==0) hID_Z_AoQ_mhtdc_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
 
-        // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i==0) hID_Z_AoQ_corr_mhtdc_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+  // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i>0) hID_Z_AoQ_mhtdc_excluding_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
 
-        // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i>0) hID_Z_AoQ_corr_mhtdc_excluding_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
-    } //end mhtdc loop
+  // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i==0) hID_Z_AoQ_corr_mhtdc_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+
+  // if(FRS_AoQ_mhtdc[i]>0 && FRS_z_mhtdc[i]>0 && i>0) hID_Z_AoQ_corr_mhtdc_excluding_first_hit->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+ }
 
 
-    ///MHTDC PID gates
-    for(int g=0; g<MAX_FRS_GATE; g++){
-        //GATE: AoQ vs Z
-        for (int i=0; i<MAX_MHTDC_HITS; i++){
+        ///MHTDC PID gates
+        for(int g=0; g<MAX_FRS_GATE; g++){
+             ///GATE: AoQ vs Z
+               for (int i=0; i<MAX_MHTDC_HITS; i++){
             if(cID_Z_AoQ_mhtdc[g]->Test(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i])==true){
-                pOutput->pFRS_ZAoQ_pass_mhtdc[i][g] = true;
+                pOutput->pFRS_ZAoQ_pass_mhtdc[i][g] =true;
 
                 hID_x2AoQ_Z1AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
                 hID_x4AoQ_Z1AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
@@ -1427,91 +1446,99 @@ void EventAnlProc::Process_FRS_Histos(EventUnpackStore* pInput, EventAnlStore* p
                 hID_dEdegoQ_Z1_Z1AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
                 hID_a2_Z1AoQgate_mhtdc[g]->Fill(FRS_ID_a2);
                 hID_a4_Z1AoQgate_mhtdc[g]->Fill(FRS_ID_a4);
-            }
+        }
 
-            //GATE: Z1 vs Z2
-            if(cID_Z_Z2gate_mhtdc[g]->Test(FRS_z_mhtdc[i], FRS_z2_mhtdc[i])==true){
-                pOutput->pFRS_Z_Z2_pass_mhtdc[i][g] = true;
+          ///GATE: Z1 vs Z2
 
-                hID_dEdegZ1_Z1Z2gate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
-                hID_dEdegoQ_Z1_Z1Z2gate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
-                hID_Z1_Z2gate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_z2_mhtdc[i]);
-                if(FRS_ID_a2!=0) hID_a2_Z1Z2gate_mhtdc[g] ->Fill(FRS_ID_a2);
-                if(FRS_ID_a4!=0) hID_a4_Z1Z2gate_mhtdc[g] ->Fill(FRS_ID_a4);
+
+                if(cID_Z_Z2gate_mhtdc[g]->Test(FRS_z_mhtdc[i], FRS_z2_mhtdc[i])==true)
+                {
+                 pOutput->pFRS_Z_Z2_pass_mhtdc[i][g] = true;
+
+                 hID_dEdegZ1_Z1Z2gate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
+                 hID_dEdegoQ_Z1_Z1Z2gate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
+                 hID_Z1_Z2gate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_z2_mhtdc[i]);
+               if(FRS_ID_a2!=0) hID_a2_Z1Z2gate_mhtdc[g] ->Fill(FRS_ID_a2);
+               if(FRS_ID_a4!=0) hID_a4_Z1Z2gate_mhtdc[g] ->Fill(FRS_ID_a4);
 
                 //X2 AoQ gated on Z1 Z2
-                if(FRS_ID_x2 > -100 && FRS_ID_x2<100){
-                    hID_x2AoQ_Z1Z2gate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+                 if(FRS_ID_x2 > -100 && FRS_ID_x2<100){
+
+                hID_x2AoQ_Z1Z2gate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+
                 }
 
-                if(FRS_ID_x4 > -100 && FRS_ID_x4<100){
-                    hID_x4AoQ_Z1Z2gate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-                    //Z1 AoQ gated on Z1 Z2
-                    if(FRS_AoQ_mhtdc[i]!=0 &&FRS_z_mhtdc[i]!=0){
-                        hID_ZAoQ_Z1Z2gate_mhtdc[g] ->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+                   if(FRS_ID_x4 > -100 && FRS_ID_x4<100){
+                hID_x4AoQ_Z1Z2gate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+                       //Z1 AoQ gated on Z1 Z2
+                   if(FRS_AoQ_mhtdc[i]!=0 &&FRS_z_mhtdc[i]!=0){
+                   hID_ZAoQ_Z1Z2gate_mhtdc[g] ->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+                        }
                     }
                 }
-            }
 
-            // ID x2 vs AoQ
-            if(cID_x2AoQ_mhtdc[g]->Test(FRS_AoQ_mhtdc[i], FRS_ID_x2)==true){
-                pOutput->pFRS_x2AoQ_pass_mhtdc[i][g] = true;
-                hID_x2AoQ_x2AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
-                hID_Z1Z2_x2AoQgate[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
-                //The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
-                // Z1 Z2 +X2 AoQ
-                if(cID_Z_Z2gate_mhtdc[fCorrel->GZ1Z2_Gate]->Test(FRS_z_mhtdc[i], FRS_z2_mhtdc[i])==true){
-                    hID_x2AoQ_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
-                    hID_x4AoQ_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-                    hID_Z1Z2_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
-                    hID_dEdegZ1_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
-                    hID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
-                    hID_a2_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_ID_a2);
-                    hID_a4_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_ID_a4);
-                    //                         hID_Z1Z2_X4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[g], FRS_z_mhtdc[i]);
-                    //                         hID_dEdegZ1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
-                    //                         hID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
+                   /// ID x2 vs AoQ
+                if(cID_x2AoQ_mhtdc[g]->Test(FRS_AoQ_mhtdc[i], FRS_ID_x2)==true){
+                     pOutput->pFRS_x2AoQ_pass_mhtdc[i][g] = true;
+                     hID_x2AoQ_x2AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+                     hID_Z1Z2_x2AoQgate[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
+                        ///The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
+                       /// Z1 Z2 +X2 AoQ
+                     if(cID_Z_Z2gate_mhtdc[fCorrel->GZ1Z2_Gate]->Test(FRS_z_mhtdc[i], FRS_z2_mhtdc[i])==true)
+                {
+                        hID_x2AoQ_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+                        hID_x4AoQ_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+                        hID_Z1Z2_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
+                        hID_dEdegZ1_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
+                        hID_dEdegoQ_Z1_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
+                        hID_a2_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_ID_a2);
+                        hID_a4_Z1Z2x2AoQgate_mhtdc[g]->Fill(FRS_ID_a4);
+//                         hID_Z1Z2_X4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[g], FRS_z_mhtdc[i]);
+//                         hID_dEdegZ1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
+//                         hID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
+                    }
                 }
-            }
 
-            // ID x4 vs AoQ
-            if(cID_x4AoQ_mhtdc[g]->Test(FRS_AoQ_mhtdc[i], FRS_ID_x4)==true){
-                pOutput->pFRS_x4AoQ_pass_mhtdc[i][g] = true;
-                hID_x4AoQ_x4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-                hID_Z1Z2_x4AoQgate[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
-                //The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
-                // Z1 Z2 +X4 AoQ
-                if(cID_Z_Z2gate_mhtdc[fCorrel->GZ1Z2_Gate]->Test(FRS_z_mhtdc[i], FRS_z2_mhtdc[i])==true){
-                    hID_x2AoQ_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
-                    hID_x4AoQ_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-                    hID_Z1Z2_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
-                    hID_dEdegZ1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
-                    hID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
-                    hID_a2_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_ID_a2);
-                    hID_a4_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_ID_a4);
+              /// ID x4 vs AoQ
+                if(cID_x4AoQ_mhtdc[g]->Test(FRS_AoQ_mhtdc[i], FRS_ID_x4)==true){
+                     pOutput->pFRS_x4AoQ_pass_mhtdc[i][g] = true;
+                     hID_x4AoQ_x4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+                     hID_Z1Z2_x4AoQgate[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
+                      ///The selected Z1 Z2 gate for this part can be found in the Correlations_config.dat file
+                 /// Z1 Z2 +X4 AoQ
+                     if(cID_Z_Z2gate_mhtdc[fCorrel->GZ1Z2_Gate]->Test(FRS_z_mhtdc[i], FRS_z2_mhtdc[i])==true)
+                {
+                        hID_x2AoQ_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+                        hID_x4AoQ_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+                        hID_Z1Z2_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
+                        hID_dEdegZ1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg_mhtdc[i]);
+                        hID_dEdegoQ_Z1_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdegoQ_mhtdc[i]);
+                        hID_a2_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_ID_a2);
+                        hID_a4_Z1Z2x4AoQgate_mhtdc[g]->Fill(FRS_ID_a4);
 
+                    }
                 }
-            }
 
-            //GATE: Energy loss S2 vs Z (Charge states)
-            if(cID_dEdegZ1_mhtdc[g]->Test(FRS_z_mhtdc[i],FRS_dEdeg)==true){ // dEdeg_vs_Z check
-                pOutput->pFRS_dEdegZ1_pass_mhtdc[i][g]=true;
-                hID_dEdegZ1_dEdegZ1Gated_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg);
-                hID_Z1AoQ_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
-                hID_Z1Z2_dEdegZgate_mhtdc[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
-                hID_x2AoQ_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
-                hID_x4AoQ_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
-                hID_a2_dEdegZgate_mhtdc[g]->Fill(FRS_ID_a2);
-                hID_a4_dEdegZgate_mhtdc[g]->Fill(FRS_ID_a4);
 
-                if(fabs(FRS_z2_mhtdc[i]-FRS_z_mhtdc[i])<0.4){ // in addition Z same
-                    hID_Z1AoQ_zsame_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+
+                    ///GATE: Energy loss S2 vs Z (Charge states)
+      if(cID_dEdegZ1_mhtdc[g]->Test(FRS_z_mhtdc[i],FRS_dEdeg)==true){ // dEdeg_vs_Z check
+          pOutput->pFRS_dEdegZ1_pass_mhtdc[i][g]=true;
+          hID_dEdegZ1_dEdegZ1Gated_mhtdc[g]->Fill(FRS_z_mhtdc[i],FRS_dEdeg);
+          hID_Z1AoQ_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
+          hID_Z1Z2_dEdegZgate_mhtdc[g]->Fill(FRS_z_mhtdc[i], FRS_z2_mhtdc[i]);
+          hID_x2AoQ_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x2);
+          hID_x4AoQ_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_ID_x4);
+          hID_a2_dEdegZgate_mhtdc[g]->Fill(FRS_ID_a2);
+          hID_a4_dEdegZgate_mhtdc[g]->Fill(FRS_ID_a4);
+
+         if(fabs(FRS_z2_mhtdc[i]-FRS_z_mhtdc[i])<0.4){ // in addition Z same
+            hID_Z1AoQ_zsame_dEdegZgate_mhtdc[g]->Fill(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i]);
                 }
             }
         }
     }
-
-} // end process
+}
 
 
 /**----------------------------------------------------------------------------------------------**/
@@ -2001,67 +2028,67 @@ AidaHit EventAnlProc::ClusterPairToHit(std::pair<AidaCluster, AidaCluster> const
      /**--------------------------------------  bPlastic  TAMEX ----------------------------------------------   **/
      //**----------------------------------------------------------------------------------------------**/
 
-    void EventAnlProc::Make_Plastic_Tamex_Histos(){
-
-         for (int i =1; i<4; i++)
-            {
-                hbPlas_ToT_Sum[i] = MakeTH1('D', Form("bPlastic/ToT_Sum_Det.%2d",i), Form("bPlastic Sum ToT Det. %2d",i), 5000, 0, 3000000);
-
-                 hbPlas_hit_pattern_det[i]= MakeTH1('D', Form("bPlastic/Stats/HitPattern_Det.%2d",i), Form("bPlastic Hit pattern Det. %2d",i), bPLASTIC_CHAN_PER_DET, 0, bPLASTIC_CHAN_PER_DET);
-
-          for(int j=0; j<bPLASTIC_CHAN_PER_DET; j++){
-
-             hbPlas_Lead_T[i][j] = MakeTH1('D', Form("bPlastic/Lead-/Lead T Plas Det. %2d Ch.%2d",  i,j), Form("Lead - Time Det %2d Ch. %2d", i,j),2500, 0, 2000);
-
-              if(i<3){//Take only cards with bPlast channels
-
-            hbPlas_Lead_dT_coinc[i][j] = MakeTH1('D', Form("bPlastic/Lead-LeadCoincidenceChan/Lead dT Plas Det. %2d Ch %d Ref Coincidence",i,j), Form("Lead dT Plas Det. %2d Ch %d Ref Coincidence",i,j),500,-200,200);
-        }
-
-            hbPlas_ToT_det[i][j] = MakeTH1('D', Form("bPlastic/ToT/ToT Plas Det. %2d Ch. %2d",  i,j), Form("ToT Det. %2d Ch. %2d", i,j),20000, 0., 200000.);
-
-            hbPlas_Multiplicity_Chan[i][j] = MakeTH1('D', Form("bPlastic/Stats/Mulitplicity_per_Chan/bPlast Multiplicity Det. %2d Ch. %2d",  i,j), Form("ToT Det. %2d Ch. %2d", i,j),50, 0., 50.);
-
-            hbPlas_lead_lead_ref_det[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Ref/Lead-Lead Plas Det. %2d RefCh. - Ch. %d", i,j), Form("Lead Ref Ch.0 - Lead Det.%2d Ch. %2d", i,j),2500, -50000., 50000.);
-
-//         hbPlas_lead_lead_ref_det2[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Ref/Lead-Lead Plas Det. %2d RefCh. %2d", i,j), Form("Lead Ref Ch.0 - Lead Det.%2d Ch. %2d", i,j),2500, -50000., 50000.);
-//         hbPlas_lead_lead_ref_det3[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Ref/Lead-Lead Plas Det. %2d RefCh. %2d", i,j), Form("Lead Ref Ch.0 - Lead Det.%2d Ch. %2d", i,j),2500, -50000., 50000.);
-
-       // hbPlas_lead_lead_gated[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Egated/Lead-Lead Egated Plas Det. %2d Ch. %2d",  i,j), Form("Lead - Lead Energy gated Det. %2d Ch.  %2d", i,j),2500, -50000., 50000.);
-
-       // hbPlas_SC41L_lead[i][j] = MakeTH1('D', Form("bPlastic/SC41-Lead_Plas/SC41_Lead Plas Det. %2d Ch.%02d", i,j), Form("SC41 Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4002, -100000., 100000.);
-         hbPlas_fatimatamex_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatTamChan-Lead_bPlas/(bPlast)FatTamChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA tamex channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
-
-         hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatVMEChan-Lead_bPlas/(bPlast)FatVMEChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA VME channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
-
-         hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41R_Anal-Lead_bPlas/SC41R_Ana_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Analogue Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
-
-         hbPlas_SC41L_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41L_Digi-Lead_bPlas/SC41L_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41L Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
-
-         hbPlas_SC41R_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/SC41R_Digi-Lead_bPlas/SC41R_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
-
-          }
-  }
-
-        // New histogram looking at correlation between Fibre implanted channels 1 and 9 (2 and 10 if A=1->4 etc). H.M.A (don't blame me though...)
-
-//         hFIMP_ToT_Correlation_Comb1 = MakeTH2('D', "bPlastic/FIMP_ToT_Correlation_Comb1", "ToT vs ToT for 2 FIMP channels, combination 1",500,0,100000,500,0,100000);
+//     void EventAnlProc::Make_Plastic_Tamex_Histos(){
 //
-//         hFIMP_ToT_Correlation_Comb2 = MakeTH2('D', "bPlastic/FIMP_ToT_Correlation_Comb2", "ToT vs ToT for 2 FIMP channels, combination 2",500,0,100000,500,0,100000);
-
-//         hSC41_Analogue_Tamex = MakeTH1('D',"bPlastic/SC41/Analogue L-R","SC41 Analogue L - R",4002, -100000., 100000.);
-//         hSC41_Digital_Tamex = MakeTH1('D',"bPlastic/SC41/Digital L-R","SC41 Analogue L - R",4002, -100000., 100000.);
-
-
-        hbPlas_Multiplicity_Det1 = MakeTH1('D',"bPlastic/Stats/Multiplicity_Det1","bPlastic Multiplicity Det 1",32,0,32);
-        hbPlas_Multiplicity_Det2 = MakeTH1('D',"bPlastic/Stats/Multiplicity_Det2","bPlastic Multiplicity Det 2",32,0,32);
-       /* hbPlas_Multiplicity_Det3 = MakeTH1('D',"bPlastic/Stats/Multiplicity_Fibre","bPlastic Multiplicity Fibre",32,0,32); */
-
-
-
-    }
+//          for (int i =1; i<4; i++)
+//             {
+//                 hbPlas_ToT_Sum[i] = MakeTH1('D', Form("bPlastic/ToT_Sum_Det.%2d",i), Form("bPlastic Sum ToT Det. %2d",i), 5000, 0, 3000000);
+//
+//                  hbPlas_hit_pattern_det[i]= MakeTH1('D', Form("bPlastic/Stats/HitPattern_Det.%2d",i), Form("bPlastic Hit pattern Det. %2d",i), bPLASTIC_CHAN_PER_DET, 0, bPLASTIC_CHAN_PER_DET);
+//
+//           for(int j=0; j<bPLASTIC_CHAN_PER_DET; j++){
+//
+//              hbPlas_Lead_T[i][j] = MakeTH1('D', Form("bPlastic/Lead-/Lead T Plas Det. %2d Ch.%2d",  i,j), Form("Lead - Time Det %2d Ch. %2d", i,j),2500, 0, 2000);
+//
+//               if(i<3){//Take only cards with bPlast channels
+//
+//             hbPlas_Lead_dT_coinc[i][j] = MakeTH1('D', Form("bPlastic/Lead-LeadCoincidenceChan/Lead dT Plas Det. %2d Ch %d Ref Coincidence",i,j), Form("Lead dT Plas Det. %2d Ch %d Ref Coincidence",i,j),500,-200,200);
+//         }
+//
+//             hbPlas_ToT_det[i][j] = MakeTH1('D', Form("bPlastic/ToT/ToT Plas Det. %2d Ch. %2d",  i,j), Form("ToT Det. %2d Ch. %2d", i,j),20000, 0., 200000.);
+//
+//             hbPlas_Multiplicity_Chan[i][j] = MakeTH1('D', Form("bPlastic/Stats/Mulitplicity_per_Chan/bPlast Multiplicity Det. %2d Ch. %2d",  i,j), Form("ToT Det. %2d Ch. %2d", i,j),50, 0., 50.);
+//
+//             hbPlas_lead_lead_ref_det[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Ref/Lead-Lead Plas Det. %2d RefCh. - Ch. %d", i,j), Form("Lead Ref Ch.0 - Lead Det.%2d Ch. %2d", i,j),2500, -50000., 50000.);
+//
+// //         hbPlas_lead_lead_ref_det2[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Ref/Lead-Lead Plas Det. %2d RefCh. %2d", i,j), Form("Lead Ref Ch.0 - Lead Det.%2d Ch. %2d", i,j),2500, -50000., 50000.);
+// //         hbPlas_lead_lead_ref_det3[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Ref/Lead-Lead Plas Det. %2d RefCh. %2d", i,j), Form("Lead Ref Ch.0 - Lead Det.%2d Ch. %2d", i,j),2500, -50000., 50000.);
+//
+//        // hbPlas_lead_lead_gated[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Egated/Lead-Lead Egated Plas Det. %2d Ch. %2d",  i,j), Form("Lead - Lead Energy gated Det. %2d Ch.  %2d", i,j),2500, -50000., 50000.);
+//
+//        // hbPlas_SC41L_lead[i][j] = MakeTH1('D', Form("bPlastic/SC41-Lead_Plas/SC41_Lead Plas Det. %2d Ch.%02d", i,j), Form("SC41 Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4002, -100000., 100000.);
+//          hbPlas_fatimatamex_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatTamChan-Lead_bPlas/(bPlast)FatTamChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA tamex channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+//
+//          hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatVMEChan-Lead_bPlas/(bPlast)FatVMEChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA VME channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+//
+//          hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41R_Anal-Lead_bPlas/SC41R_Ana_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Analogue Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+//
+//          hbPlas_SC41L_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41L_Digi-Lead_bPlas/SC41L_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41L Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+//
+//          hbPlas_SC41R_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/SC41R_Digi-Lead_bPlas/SC41R_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+//
+//           }
+//   }
+//
+//         // New histogram looking at correlation between Fibre implanted channels 1 and 9 (2 and 10 if A=1->4 etc). H.M.A (don't blame me though...)
+//
+// //         hFIMP_ToT_Correlation_Comb1 = MakeTH2('D', "bPlastic/FIMP_ToT_Correlation_Comb1", "ToT vs ToT for 2 FIMP channels, combination 1",500,0,100000,500,0,100000);
+// //
+// //         hFIMP_ToT_Correlation_Comb2 = MakeTH2('D', "bPlastic/FIMP_ToT_Correlation_Comb2", "ToT vs ToT for 2 FIMP channels, combination 2",500,0,100000,500,0,100000);
+//
+// //         hSC41_Analogue_Tamex = MakeTH1('D',"bPlastic/SC41/Analogue L-R","SC41 Analogue L - R",4002, -100000., 100000.);
+// //         hSC41_Digital_Tamex = MakeTH1('D',"bPlastic/SC41/Digital L-R","SC41 Analogue L - R",4002, -100000., 100000.);
+//
+//
+//         hbPlas_Multiplicity_Det1 = MakeTH1('D',"bPlastic/Stats/Multiplicity_Det1","bPlastic Multiplicity Det 1",32,0,32);
+//         hbPlas_Multiplicity_Det2 = MakeTH1('D',"bPlastic/Stats/Multiplicity_Det2","bPlastic Multiplicity Det 2",32,0,32);
+//        /* hbPlas_Multiplicity_Det3 = MakeTH1('D',"bPlastic/Stats/Multiplicity_Fibre","bPlastic Multiplicity Fibre",32,0,32); */
+//
+//
+//
+//     }
     ///////////////////////////////////////////////////
-    void EventAnlProc::Process_Plastic_Tamex_Histos(EventUnpackStore* pInput, EventAnlStore* pOutput){
+    /*void EventAnlProc::Process_Plastic_Tamex_Histos(EventUnpackStore* pInput, EventAnlStore* pOutput){
 
          fired_det1=false, fired_det2=false;
          ZERO_ARRAY(bPlas_tot_hits);
@@ -2086,160 +2113,160 @@ AidaHit EventAnlProc::ClusterPairToHit(std::pair<AidaCluster, AidaCluster> const
 
 
      ///**---------------------------------------------LEAD -------------------------------------------------**/
-           ///Loop on channels First
-
-              for(int i=1; i<4; i++){ ///Detector number
-                 for (int j = 0; j < 16; j++){  ///Channel number
-
-                for(int k=0; k< bPLASTIC_TAMEX_HITS; k++){
-                    //Fat_RefCh[j] = pInput->fFat_Lead_PMT[1][j];
-                    bPlas_RefCh0_Det1[k] = pInput->fbPlas_Lead_PMT[1][0][k];
-                    bPlas_RefCh0_Det2[k] = pInput->fbPlas_Lead_PMT[2][0][k];
-                    bPlas_RefCh0_Det3[k] = pInput->fbPlas_Lead_PMT[3][0][k];
-
-                        }
-                    }
-              }
-            ////////////////////////////
-              ///Loop over channels
-              pOutput->pbPlasDetNum= pInput->fbPlasDetNum;
-           // cout<<"pInput->fbPlasDetNum " <<pInput->fbPlasDetNum << endl;
-              for(int a=1; a<4; a++){ ///Detector number
-                    pOutput->pbPlasChan[a]= pInput->fbPlasChan[a];
-
-                 for (int b = 0; b < bPLASTIC_CHAN_PER_DET; b++){  ///Channel number
-
-
- ///**---------------------------------------------Plastic Lead Time ----------------------------------**/
-
-            if(pInput->fbPlas_PMT_Lead_N[a][b]<bPLASTIC_TAMEX_HITS){
-                pOutput->pbPlas_PMT_Lead_N[a][b] = pInput->fbPlas_PMT_Lead_N[a][b];
-
-               for(int j=0; j< bPLASTIC_TAMEX_HITS; j++){ ///Hits
-                   // if(j<20){
-
-                    lead_bplas[a][b][j] = pInput->fbPlas_Lead_PMT[a][b][j];
-
-                if(lead_bplas[a][b][j]!=0){
-                    hbPlas_Lead_T[a][b]->Fill(lead_bplas[a][b][j]);
-                    hits_bplas_lead++;
-                    pOutput->pbPlas_LeadT[a][b][j] = lead_bplas[a][b][j];
-                    pOutput->pbPlas_LeadHits = hits_bplas_lead;
-                    pOutput->pbPlas_LeadT_Avg = lead_bplas[a][b][j]/hits_bplas_lead;
-
-    ///**---------------------------bPlast Channels - AND signal  ----------------------------------**/
-        if(a==bPLASTIC_DOWNSTREAM_DET && pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_DOWN_COIN][0] !=0 && lead_bplas[bPLASTIC_DOWNSTREAM_DET][b][j]!=0){ // s452 a==1 is the downstream detector. Coincidence is in a=3, b=0.
-        hbPlas_Lead_dT_coinc[bPLASTIC_DOWNSTREAM_DET][b]->Fill((lead_bplas[bPLASTIC_DOWNSTREAM_DET][b][j] - pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_DOWN_COIN][0])*5);
-     }
-   //  cout<<"a " << a << " b " << b << " j " << j << endl;
-     if(a==bPLASTIC_UPSTREAM_DET && pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0] != 0&&  lead_bplas[bPLASTIC_UPSTREAM_DET][b][j]!=0){ // s452 a==2 is the upstream detector. Coincidence is in a=3, b=1.
-
-        hbPlas_Lead_dT_coinc[bPLASTIC_UPSTREAM_DET][b]->Fill((lead_bplas[bPLASTIC_UPSTREAM_DET][b][j] - pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0])*5);
-     }
-    }
-
-
-//     ///**---------------------------------------------Plastic Lead Ref dT ----------------------------------**/
+//          /*  ///Loop on channels First
 //
-//                     if(i>15 && pInput->fbPlas_Lead_PMT[16][j]>0 && pInput->fbPlas_Lead_PMT[a][b][j]>0) {
-
-        if(bPlas_RefCh0_Det1[j]>0 && lead_bplas[1][b][j]>0){
-            lead_lead_bplas_Ref1[b][j] = (bPlas_RefCh0_Det1[j] -  lead_bplas[1][b][j])*CYCLE_TIME;
-
-        }
-        if(bPlas_RefCh0_Det2[j]>0 && lead_bplas[2][b][j]>0){
-            lead_lead_bplas_Ref2[b][j] = (bPlas_RefCh0_Det2[j] -  lead_bplas[2][b][j])*CYCLE_TIME;
-        }
-              if(lead_lead_bplas_Ref1[b][j]!=0 && a==1) hbPlas_lead_lead_ref_det[1][b] ->Fill(lead_lead_bplas_Ref1[b][j]);
-
-       // cout<<"ANL EVENT " << pInput->fevent_number << " a " << a << " b " << b << " j " << j << endl;
-              if(lead_lead_bplas_Ref2[b][j]!=0 && a==2) hbPlas_lead_lead_ref_det[2][b] ->Fill(lead_lead_bplas_Ref2[b][j]);
-
+//               for(int i=1; i<4; i++){ ///Detector number
+//                  for (int j = 0; j < 16; j++){  ///Channel number
 //
-              ///Reference signals
-                ///Fatima tamex OR in bplast tamex
-               if(bPlas_TAM_FATTAM>0 && lead_bplas[a][b][j]>0){
-                    bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_FATTAM -  lead_bplas[a][b][j])*CYCLE_TIME;
-                    hbPlas_fatimatamex_dT[a][b]->Fill(bPlas_fatimatamex_dT[a][b][j] );
-                }
-                ///Fatima VME OR in bplast tamex
-                if(bPlas_TAM_FATVME>0 && lead_bplas[a][b][j]>0){
-                    bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_FATVME -  lead_bplas[a][b][j])*CYCLE_TIME;
-                    hbPlas_fatimavme_dT[a][b]->Fill(bPlas_fatimavme_dT[a][b][j] );
-                    }
-                  ///SC41L in bplast tamex
-                if(bPlas_TAM_SC41L_DIG>0 && lead_bplas[a][b][j]>0){
-                    bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_SC41L_DIG -  lead_bplas[a][b][j])*CYCLE_TIME;
-                    hbPlas_SC41L_Digi_lead[a][b]->Fill(SC41L_DIG_lead_bPlas[a][b][j] );
-                    }
-                    ///SC41R in bplast tamex
-                if(bPlas_TAM_SC41R_DIG>0 && lead_bplas[a][b][j]>0){
-                    bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_SC41R_DIG -  lead_bplas[a][b][j])*CYCLE_TIME;
-                    hbPlas_SC41R_Digi_lead[a][b]->Fill(SC41R_DIG_lead_bPlas[a][b][j] );
-                    }
-
-                }
-
-            ///AKM note: lead clear of malloc 29.04.21
+//                 for(int k=0; k< bPLASTIC_TAMEX_HITS; k++){
+//                     //Fat_RefCh[j] = pInput->fFat_Lead_PMT[1][j];
+//                     bPlas_RefCh0_Det1[k] = pInput->fbPlas_Lead_PMT[1][0][k];
+//                     bPlas_RefCh0_Det2[k] = pInput->fbPlas_Lead_PMT[2][0][k];
+//                     bPlas_RefCh0_Det3[k] = pInput->fbPlas_Lead_PMT[3][0][k];
+//
+//                         }
+//                     }
+//               }
+//             ////////////////////////////
+//               ///Loop over channels
+//               pOutput->pbPlasDetNum= pInput->fbPlasDetNum;
+//            // cout<<"pInput->fbPlasDetNum " <<pInput->fbPlasDetNum << endl;
+//               for(int a=1; a<4; a++){ ///Detector number
+//                     pOutput->pbPlasChan[a]= pInput->fbPlasChan[a];
+//
+//                  for (int b = 0; b < bPLASTIC_CHAN_PER_DET; b++){  ///Channel number
 //
 //
-//       ///**---------------------------------------------Plastic Trail ----------------------------------**/
+//  ///**---------------------------------------------Plastic Lead Time ----------------------------------**/
 //
-                pOutput->pbPlas_PMT_Trail_N[a][b] = pInput->fbPlas_PMT_Trail_N[a][b];
-                if(a<4 && b<bPLASTIC_CHAN_PER_DET){
-               for(int j=0; j< bPLASTIC_TAMEX_HITS; j++){ ///Hits
-               // if(j<20){
-
-                   /* trail_bplas[a][b][j] = ; */
-
-                    //hbPlas_Trail_T[a][b]->Fill(trail_bplas[a][b][j]);
-                  if(pOutput->pbPlas_TrailT[a][b][j]!=0)  hits_bplas_trail++;
-                    pOutput->pbPlas_TrailT[a][b][j] = pInput->fbPlas_Trail_PMT[a][b][j];
-                        }
-                    }
-                    ///AKM note: trail clear of malloc 29.04.21
-
+//             if(pInput->fbPlas_PMT_Lead_N[a][b]<bPLASTIC_TAMEX_HITS){
+//                 pOutput->pbPlas_PMT_Lead_N[a][b] = pInput->fbPlas_PMT_Lead_N[a][b];
 //
-//    ///**--------------------Plastic ToT --------------------------------**/
+//                for(int j=0; j< bPLASTIC_TAMEX_HITS; j++){ ///Hits
+//                    // if(j<20){
 //
-              for(int j=0; j< bPLASTIC_TAMEX_HITS; j++){
-
-                  if(pInput->fbPlas_Trail_PMT[a][b][j] >0 && pInput->fbPlas_Lead_PMT[a][b][j]>0){
-
-        ToT_bplas[a][b][j] = (pInput->fbPlas_Trail_PMT[a][b][j] - pInput->fbPlas_Lead_PMT[a][b][j]);
-
-                ///Correction for overflows
-                if(ABS(ToT_bplas[a][b][j]) >(double)(COARSE_CT_RANGE>>1)) {
-
-                       ToT_bplas[a][b][j] = CYCLE_TIME*(ToT_bplas[a][b][j] + COARSE_CT_RANGE);
-                      }
-                 else{
-                           ToT_bplas[a][b][j]= CYCLE_TIME*ToT_bplas[a][b][j];
-                       }
-                       ///Gain matching
-               // pOutput-> pbPlas_ToTCalib[a][b][j] = fCal->Abplas_TAMEX_ZAoQ[i]* ToT_bplas[a][b][j] + fCal->Bbplas_TAMEX_ZAoQ[i];
-               pOutput-> pbPlas_ToTCalib[a][b][j] =ToT_bplas[a][b][j];
-
-                       if(ToT_bplas[a][b][j]>0) {
-                        hbPlas_ToT_det[a][b] ->Fill(ToT_bplas[a][b][j]);
-                        hbPlas_ToT_Sum[a]->Fill(ToT_bplas[a][b][j]);
-                        hbPlas_hit_pattern_det[a]->Fill(b);
-                          //bPlas_tot_hits++;
-                          bPlas_tot_hits[a][b]++;
-
-                          hbPlas_Multiplicity_Chan[a][b] ->Fill(bPlas_tot_hits[a][b]);
-
-                         if(a==1) hbPlas_Multiplicity_Det1->Fill(bPlas_tot_hits[1][b]);
-                         if(a==2) hbPlas_Multiplicity_Det2->Fill(bPlas_tot_hits[2][b]);
-                      //   if(a==3) hbPlas_Multiplicity_Det3->Fill(bPlas_tot_hits);
-
-                          }//ToT>0
-                        }//Lead+Trail>0
-                      }//hits
-                    }//Limit hits loop
-                 }  //Channel
-              }  ///Detector
-        } ///Function
+//                     lead_bplas[a][b][j] = pInput->fbPlas_Lead_PMT[a][b][j];
+//
+//                 if(lead_bplas[a][b][j]!=0){
+//                     hbPlas_Lead_T[a][b]->Fill(lead_bplas[a][b][j]);
+//                     hits_bplas_lead++;
+//                     pOutput->pbPlas_LeadT[a][b][j] = lead_bplas[a][b][j];
+//                     pOutput->pbPlas_LeadHits = hits_bplas_lead;
+//                     pOutput->pbPlas_LeadT_Avg = lead_bplas[a][b][j]/hits_bplas_lead;
+//
+//     ///**---------------------------bPlast Channels - AND signal  ----------------------------------**/
+//         if(a==bPLASTIC_DOWNSTREAM_DET && pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_DOWN_COIN][0] !=0 && lead_bplas[bPLASTIC_DOWNSTREAM_DET][b][j]!=0){ // s452 a==1 is the downstream detector. Coincidence is in a=3, b=0.
+//         hbPlas_Lead_dT_coinc[bPLASTIC_DOWNSTREAM_DET][b]->Fill((lead_bplas[bPLASTIC_DOWNSTREAM_DET][b][j] - pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_DOWN_COIN][0])*5);
+//      }
+//    //  cout<<"a " << a << " b " << b << " j " << j << endl;
+//      if(a==bPLASTIC_UPSTREAM_DET && pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0] != 0&&  lead_bplas[bPLASTIC_UPSTREAM_DET][b][j]!=0){ // s452 a==2 is the upstream detector. Coincidence is in a=3, b=1.
+//
+//         hbPlas_Lead_dT_coinc[bPLASTIC_UPSTREAM_DET][b]->Fill((lead_bplas[bPLASTIC_UPSTREAM_DET][b][j] - pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0])*5);
+//      }
+//     }
+//
+//
+// //     ///**---------------------------------------------Plastic Lead Ref dT ----------------------------------**/
+// //
+// //                     if(i>15 && pInput->fbPlas_Lead_PMT[16][j]>0 && pInput->fbPlas_Lead_PMT[a][b][j]>0) {
+//
+//         if(bPlas_RefCh0_Det1[j]>0 && lead_bplas[1][b][j]>0){
+//             lead_lead_bplas_Ref1[b][j] = (bPlas_RefCh0_Det1[j] -  lead_bplas[1][b][j])*CYCLE_TIME;
+//
+//         }
+//         if(bPlas_RefCh0_Det2[j]>0 && lead_bplas[2][b][j]>0){
+//             lead_lead_bplas_Ref2[b][j] = (bPlas_RefCh0_Det2[j] -  lead_bplas[2][b][j])*CYCLE_TIME;
+//         }
+//               if(lead_lead_bplas_Ref1[b][j]!=0 && a==1) hbPlas_lead_lead_ref_det[1][b] ->Fill(lead_lead_bplas_Ref1[b][j]);
+//
+//        // cout<<"ANL EVENT " << pInput->fevent_number << " a " << a << " b " << b << " j " << j << endl;
+//               if(lead_lead_bplas_Ref2[b][j]!=0 && a==2) hbPlas_lead_lead_ref_det[2][b] ->Fill(lead_lead_bplas_Ref2[b][j]);
+//
+// //
+//               ///Reference signals
+//                 ///Fatima tamex OR in bplast tamex
+//                if(bPlas_TAM_FATTAM>0 && lead_bplas[a][b][j]>0){
+//                     bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_FATTAM -  lead_bplas[a][b][j])*CYCLE_TIME;
+//                     hbPlas_fatimatamex_dT[a][b]->Fill(bPlas_fatimatamex_dT[a][b][j] );
+//                 }
+//                 ///Fatima VME OR in bplast tamex
+//                 if(bPlas_TAM_FATVME>0 && lead_bplas[a][b][j]>0){
+//                     bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_FATVME -  lead_bplas[a][b][j])*CYCLE_TIME;
+//                     hbPlas_fatimavme_dT[a][b]->Fill(bPlas_fatimavme_dT[a][b][j] );
+//                     }
+//                   ///SC41L in bplast tamex
+//                 if(bPlas_TAM_SC41L_DIG>0 && lead_bplas[a][b][j]>0){
+//                     bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_SC41L_DIG -  lead_bplas[a][b][j])*CYCLE_TIME;
+//                     hbPlas_SC41L_Digi_lead[a][b]->Fill(SC41L_DIG_lead_bPlas[a][b][j] );
+//                     }
+//                     ///SC41R in bplast tamex
+//                 if(bPlas_TAM_SC41R_DIG>0 && lead_bplas[a][b][j]>0){
+//                     bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_SC41R_DIG -  lead_bplas[a][b][j])*CYCLE_TIME;
+//                     hbPlas_SC41R_Digi_lead[a][b]->Fill(SC41R_DIG_lead_bPlas[a][b][j] );
+//                     }
+//
+//                 }
+//
+//             ///AKM note: lead clear of malloc 29.04.21
+// //
+// //
+// //       ///**---------------------------------------------Plastic Trail ----------------------------------**/
+// //
+//                 pOutput->pbPlas_PMT_Trail_N[a][b] = pInput->fbPlas_PMT_Trail_N[a][b];
+//                 if(a<4 && b<bPLASTIC_CHAN_PER_DET){
+//                for(int j=0; j< bPLASTIC_TAMEX_HITS; j++){ ///Hits
+//                // if(j<20){
+//
+//                    /* trail_bplas[a][b][j] = ; */
+//
+//                     //hbPlas_Trail_T[a][b]->Fill(trail_bplas[a][b][j]);
+//                   if(pOutput->pbPlas_TrailT[a][b][j]!=0)  hits_bplas_trail++;
+//                     pOutput->pbPlas_TrailT[a][b][j] = pInput->fbPlas_Trail_PMT[a][b][j];
+//                         }
+//                     }
+//                     ///AKM note: trail clear of malloc 29.04.21
+//
+// //
+// //    ///**--------------------Plastic ToT --------------------------------**/
+// //
+//               for(int j=0; j< bPLASTIC_TAMEX_HITS; j++){
+//
+//                   if(pInput->fbPlas_Trail_PMT[a][b][j] >0 && pInput->fbPlas_Lead_PMT[a][b][j]>0){
+//
+//         ToT_bplas[a][b][j] = (pInput->fbPlas_Trail_PMT[a][b][j] - pInput->fbPlas_Lead_PMT[a][b][j]);
+//
+//                 ///Correction for overflows
+//                 if(ABS(ToT_bplas[a][b][j]) >(double)(COARSE_CT_RANGE>>1)) {
+//
+//                        ToT_bplas[a][b][j] = CYCLE_TIME*(ToT_bplas[a][b][j] + COARSE_CT_RANGE);
+//                       }
+//                  else{
+//                            ToT_bplas[a][b][j]= CYCLE_TIME*ToT_bplas[a][b][j];
+//                        }
+//                        ///Gain matching
+//                // pOutput-> pbPlas_ToTCalib[a][b][j] = fCal->Abplas_TAMEX_ZAoQ[i]* ToT_bplas[a][b][j] + fCal->Bbplas_TAMEX_ZAoQ[i];
+//                pOutput-> pbPlas_ToTCalib[a][b][j] =ToT_bplas[a][b][j];
+//
+//                        if(ToT_bplas[a][b][j]>0) {
+//                         hbPlas_ToT_det[a][b] ->Fill(ToT_bplas[a][b][j]);
+//                         hbPlas_ToT_Sum[a]->Fill(ToT_bplas[a][b][j]);
+//                         hbPlas_hit_pattern_det[a]->Fill(b);
+//                           //bPlas_tot_hits++;
+//                           bPlas_tot_hits[a][b]++;
+//
+//                           hbPlas_Multiplicity_Chan[a][b] ->Fill(bPlas_tot_hits[a][b]);
+//
+//                          if(a==1) hbPlas_Multiplicity_Det1->Fill(bPlas_tot_hits[1][b]);
+//                          if(a==2) hbPlas_Multiplicity_Det2->Fill(bPlas_tot_hits[2][b]);
+//                       //   if(a==3) hbPlas_Multiplicity_Det3->Fill(bPlas_tot_hits);
+//
+//                           }//ToT>0
+//                         }//Lead+Trail>0
+//                       }//hits
+//                     }//Limit hits loop
+//                  }  //Channel
+//               }  ///Detector
+//         }*/ ///Function*/
 
          /**----------------------------------------------------------------------------------------------**/
      /**--------------------------------------  bPlastic TwinPeaks -----------------------------------**/
@@ -2280,15 +2307,17 @@ AidaHit EventAnlProc::ClusterPairToHit(std::pair<AidaCluster, AidaCluster> const
        // hbPlas_lead_lead_gated[i][j] = MakeTH1('D', Form("bPlastic/Lead-Lead_Egated/Lead-Lead Egated Plas Det. %2d Ch. %2d",  i,j), Form("Lead - Lead Energy gated Det. %2d Ch.  %2d", i,j),2500, -50000., 50000.);
 
 	  // hbPlas_SC41L_lead[i][j] = MakeTH1('D', Form("bPlastic/SC41-Lead_Plas/SC41_Lead Plas Det. %2d Ch.%02d", i,j), Form("SC41 Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4002, -100000., 100000.);
-	    hbPlas_fatimatamex_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatTamChan-Lead_bPlas/(bPlast)FatTamChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA tamex channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+	   /* hbPlas_fatimatamex_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatTamChan-Lead_bPlas/(bPlast)FatTamChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA tamex channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
 
 	    hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/FatVMEChan-Lead_bPlas/(bPlast)FatVMEChan_Lead bPlas Det.%2d Ch.%02d", i,j), Form("FATIMA VME channel in bPlast: Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
 
-	    hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41R_Anal-Lead_bPlas/SC41R_Ana_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Analogue Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+	    hbPlas_fatimavme_dT[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41R_Anal-Lead_bPlas/SC41R_Ana_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Analogue Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.); */
 
 	    hbPlas_SC41L_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41L_Digi-Lead_bPlas/SC41L_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41L Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
 
-	    hbPlas_SC41R_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/SC41R_Digi-Lead_bPlas/SC41R_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+	    hbPlas_SC41R_Digi_lead[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/SC41R_Digi-Lead_bPlas/SC41R_Digi_Lead bPlas Det. %2d Ch.%02d", i,j), Form("SC41R Digital Lead - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
+
+        hbPlas_Ge_Trig_lead[i][j] = MakeTH1('D', Form("bPlastic/AdditionalChannels/Ge_Trig-Lead_bPlas/Ge_Trig_Lead bPlas Det. %2d Ch.%02d", i,j), Form("Ge Trigger - bPlas Lead Det. %2d Lead Ch. %2d ", i,j), 4000, -100000., 100000.);
 
           }
   }
@@ -2332,8 +2361,8 @@ AidaHit EventAnlProc::ClusterPairToHit(std::pair<AidaCluster, AidaCluster> const
 
               ///Loop over channels
               pOutput->pbPlasDetNum_Fast= pInput->fbPlasDetNum_Fast;
-            // cout<<"pInput->fbPlasDetNum " <<pInput->fbPlasDetNum << endl;
-              for(int a=1; a<=3; a++){ ///Detector number
+
+              for(int a=1; a<4; a++){ ///Detector number (this is crappy coding... A.K.M)
                     pOutput->pbPlas_FastChan[a]= pInput->fbPlas_FastChan[a];
                     pOutput->pbPlas_SlowChan[a]= pInput->fbPlas_SlowChan[a];
 
@@ -2365,13 +2394,10 @@ AidaHit EventAnlProc::ClusterPairToHit(std::pair<AidaCluster, AidaCluster> const
         hbPlas_Lead_dT_coinc[bPLASTIC_DOWNSTREAM_DET][b]->Fill((lead_bplas_fast[bPLASTIC_DOWNSTREAM_DET][b][j] - pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_DOWN_COIN][0])*5); ///In ps
      }
 
-        //cout<<"pInput->fbPlast_Fast_Lead "<< pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][j] << " bPLASTIC_ADDITIONAL_CH_MOD " <<bPLASTIC_ADDITIONAL_CH_MOD << " bPLASTIC_UP_COIN  " <<bPLASTIC_UP_COIN << " j " << j << " lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j] " <<lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j] << " b " << b << endl;
-   //  cout<<"a " << a << " b " << b << " j " << j << endl;
      if(a==bPLASTIC_UPSTREAM_DET && pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0] != 0&&  lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j]>0){ // s452 a==2 is the upstream detector. Coincidence is in a=3, b=1.
 
         hbPlas_Lead_dT_coinc[bPLASTIC_UPSTREAM_DET][b]->Fill((lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j] - pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0])*5); ///In ns
 
-      //   cout<<"EVENT " << pInput->fevent_number << " dT "<<(lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j] - pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0])*5 << " lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j] " <<lead_bplas_fast[bPLASTIC_UPSTREAM_DET][b][j] << " pInput->fbPlas_Lead_PMT[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0] " <<pInput->fbPlast_Fast_Lead[bPLASTIC_ADDITIONAL_CH_MOD][bPLASTIC_UP_COIN][0] << " j " << j << endl;
      }
     }
     ///**-----------------------------Plastic Fast Lead Ref dT ----------------------------------**/
@@ -2393,24 +2419,30 @@ AidaHit EventAnlProc::ClusterPairToHit(std::pair<AidaCluster, AidaCluster> const
 
               ///Reference signals
                 ///Fatima tamex OR in bplast tamex
-               if(bPlas_TAM_FATTAM>0 && lead_bplas_fast[a][b][j]>0){
-                    bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_FATTAM -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
-                    hbPlas_fatimatamex_dT[a][b]->Fill(bPlas_fatimatamex_dT[a][b][j] );
-                }
-                ///Fatima VME OR in bplast tamex
-                if(bPlas_TAM_FATVME>0 && lead_bplas_fast[a][b][j]>0){
-                    bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_FATVME -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
-                    hbPlas_fatimavme_dT[a][b]->Fill(bPlas_fatimavme_dT[a][b][j] );
-                    }
+//                if(bPlas_TAM_FATTAM>0 && lead_bplas_fast[a][b][j]>0){
+//                     bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_FATTAM -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
+//                     hbPlas_fatimatamex_dT[a][b]->Fill(bPlas_fatimatamex_dT[a][b][j] );
+//                 }
+//                 ///Fatima VME OR in bplast tamex
+//                 if(bPlas_TAM_FATVME>0 && lead_bplas_fast[a][b][j]>0){
+//                     bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_FATVME -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
+//                     hbPlas_fatimavme_dT[a][b]->Fill(bPlas_fatimavme_dT[a][b][j] );
+//                     }
                   ///SC41L in bplast tamex
                 if(bPlas_TAM_SC41L_DIG>0 && lead_bplas_fast[a][b][j]>0){
-                    bPlas_fatimatamex_dT[a][b][j] = (bPlas_TAM_SC41L_DIG -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
-                    hbPlas_SC41L_Digi_lead[a][b]->Fill(SC41L_DIG_lead_bPlas[a][b][j] );
+
+                        SC41L_DIG_lead_bPlas[a][b][j] = (bPlas_TAM_SC41L_DIG -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
+                        hbPlas_SC41L_Digi_lead[a][b]->Fill(SC41L_DIG_lead_bPlas[a][b][j] );
                     }
                     ///SC41R in bplast tamex
                 if(bPlas_TAM_SC41R_DIG>0 && lead_bplas_fast[a][b][j]>0){
-                    bPlas_fatimavme_dT[a][b][j] = (bPlas_TAM_SC41R_DIG -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
-                    hbPlas_SC41R_Digi_lead[a][b]->Fill(SC41R_DIG_lead_bPlas[a][b][j] );
+                         SC41R_DIG_lead_bPlas[a][b][j] = (bPlas_TAM_SC41R_DIG -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
+                         hbPlas_SC41R_Digi_lead[a][b]->Fill(SC41R_DIG_lead_bPlas[a][b][j] );
+                    }
+                    /// Ge trigger in bplastic
+                    if(bPlas_TAM_Ge_TRIG>0 && lead_bplas_fast[a][b][j]>0){
+                          Ge_Trig_lead_bPlas[a][b][j] = (bPlas_TAM_Ge_TRIG -  lead_bplas_fast[a][b][j])*CYCLE_TIME;
+                          hbPlas_Ge_Trig_lead[a][b]->Fill(Ge_Trig_lead_bPlas[a][b][j] );
                     }
 
                 }
@@ -3025,249 +3057,273 @@ if(Fatmult > 0){
 
 }//end of fatima vme
 
-/**----------------------------------------------------------------------------------------------**/
-/**--------------------------------------  Germanium  ---------------------------------------------**/
-/**----------------------------------------------------------------------------------------------**/
-void EventAnlProc::Make_Germanium_Histos(){
+    /**----------------------------------------------------------------------------------------------**/
+    /**--------------------------------------  Germanium  ---------------------------------------------**/
+    /**----------------------------------------------------------------------------------------------**/
+    void EventAnlProc::Make_Germanium_Histos()
+    {
+      hGe_ESum = MakeTH1('I',"Germanium/Sum/Germanium_ESum_1keV","Germanium Energy Sum",20000,0,20000);
+      hGe_ESum_halfkev = MakeTH1('I',"Germanium/Sum/Germanium_ESum_0_5keV","Germanium Energy Sum 0_5keV",10000,0,5000);
 
-    hGe_ESum = MakeTH1('I',"Germanium/Sum/Germanium_ESum_1keV","Germanium Energy Sum",20000,0,20000);
-    hGe_ESum_halfkev = MakeTH1('I',"Germanium/Sum/Germanium_ESum_0_5keV","Germanium Energy Sum 0_5keV",10000,0,5000);
+      hGe_Mult = MakeTH1('I',"Germanium/Stats/Germanium_Multiplicity","Germanium Multiplicity",30,0,30);
 
-    hGe_Mult = MakeTH1('I',"Germanium/Stats/Germanium_Multiplicity","Germanium Multiplicity",30,0,30);
+      hGe_SC41L = MakeTH1('I',"Germanium/SCI41/Germanium_SC41L_Ana","Germanium SC41 Left",5000,0,5000);
+      hGe_SC41R = MakeTH1('I',"Germanium/SCI41/Germanium_SC41R_Ana","Germanium SC41 Right",5000,0,5000);
+      hGe_SC41L_digi = MakeTH1('I',"Germanium/SCI41/Germanium_SC41L_Digi","Germanium SC41 Left",5000,0,5000);
+      hGe_SC41R_digi = MakeTH1('I',"Germanium/SCI41/Germanium_SC41R_Digi","Germanium SC41 Right",5000,0,5000);
 
-    hGe_SC41L = MakeTH1('I',"Germanium/SCI41/Germanium_SC41L_Ana","Germanium SC41 Left",5000,0,5000);
-    hGe_SC41R = MakeTH1('I',"Germanium/SCI41/Germanium_SC41R_Ana","Germanium SC41 Right",5000,0,5000);
-    hGe_SC41L_digi = MakeTH1('I',"Germanium/SCI41/Germanium_SC41L_Digi","Germanium SC41 Left",5000,0,5000);
-    hGe_SC41R_digi = MakeTH1('I',"Germanium/SCI41/Germanium_SC41R_Digi","Germanium SC41 Right",5000,0,5000);
+      hGe_ESum_largerange_OF = MakeTH1('I',"Germanium/Sum/Germanium_largerange_OF","Germanium Energy Sum (Overflow)",5000,0,5000);
+      hGe_ESum_largerange_PU = MakeTH1('I',"Germanium/Sum/Germanium_largerange_PU","Germanium Energy Sum (Pileup)",5000,0,5000);
+      hGe_Hit_Pat = MakeTH1('I',"Germanium/Stats/Germanium_Hit_Pat","Germanium Hit Pattern",Germanium_MAX_HITS,0,Germanium_MAX_HITS);
 
-    hGe_ESum_largerange_OF = MakeTH1('I',"Germanium/Sum/Germanium_largerange_OF","Germanium Energy Sum (Overflow)",5000,0,5000);
-    hGe_ESum_largerange_PU = MakeTH1('I',"Germanium/Sum/Germanium_largerange_PU","Germanium Energy Sum (Pileup)",5000,0,5000);
-    hGe_Hit_Pat = MakeTH1('I',"Germanium/Stats/Germanium_Hit_Pat","Germanium Hit Pattern",Germanium_MAX_HITS,0,Germanium_MAX_HITS);
+      hGe_Chan_E_Mat = MakeTH2('D',"Germanium/Sum/Germanium_E_Mat","Germanium Energy-Energy Matrix",2000,0,2000,2000,0,2000);
 
-    hGe_Chan_E_Mat = MakeTH2('D',"Germanium/Sum/Germanium_E_Mat","Germanium Energy-Energy Matrix",2000,0,2000,2000,0,2000);
+      hGe_Chan_E_vsDet = MakeTH2('D',"Germanium/Sum/Germanium_E_DetectorID","Germanium Energy vs Dectector Matrix",Germanium_MAX_HITS,0,Germanium_MAX_HITS,5000,0,5000);
 
-    hGe_Chan_E_vsDet = MakeTH2('D',"Germanium/Sum/Germanium_E_DetectorID","Germanium Energy vs Dectector Matrix",Germanium_MAX_HITS,0,Germanium_MAX_HITS,5000,0,5000);
+      hGe_MultvsdT = MakeTH2('D',"Germanium/Stats/Germanium_Mult_vs_GamGamdT","Germanium Multiplicity vs Gamma Gamma dT",Germanium_MAX_HITS,0,Germanium_MAX_HITS,200,-1000,1000);
 
-    hGe_MultvsdT = MakeTH2('D',"Germanium/Stats/Germanium_Mult_vs_GamGamdT","Germanium Multiplicity vs Gamma Gamma dT",Germanium_MAX_HITS,0,Germanium_MAX_HITS,200,-1000,1000);
+      hGe_AddbackSum = MakeTH1('I',"Germanium/Sum/Germanium_Addback_1keV","Germanium Addback Energy Sum 1keV",5000,0,5000);
 
-    hGe_AddbackSum = MakeTH1('I',"Germanium/Sum/Germanium_Addback_1keV","Germanium Addback Energy Sum 1keV",5000,0,5000);
+      hGe_AddbackSum_halfkev = MakeTH1('I',"Germanium/Sum/Germanium_Addback_0_5keV","Germanium Addback Energy Sum 0.5keV",10000,0,5000);
 
-    hGe_AddbackSum_halfkev = MakeTH1('I',"Germanium/Sum/Germanium_Addback_0_5keV","Germanium Addback Energy Sum 0.5keV",10000,0,5000);
+       hGe_dTaddback = MakeTH1('I',"Germanium/Sum/Germanium_Addback_dT","Germanium Addback dT",100,-1000,1000);
 
-    hGe_dTaddback = MakeTH1('I',"Germanium/Sum/Germanium_Addback_dT","Germanium Addback dT",100,-1000,1000);
+       hGe_dTgammagamma = MakeTH1('D',"Germanium/Sum/Germanium_GammaGamma_dT","Germanium Gamma-Gamma dT",200,-1000,1000);
 
-    hGe_dTgammagamma = MakeTH1('D',"Germanium/Sum/Germanium_GammaGamma_dT","Germanium Gamma-Gamma dT",200,-1000,1000);
+       hGe_CFdT_gammagamma = MakeTH1('D',"Germanium/Sum/Germanium_GammaGamma_CF_dT","Germanium Gamma-Gamma dT",2000,-1000,1000);
 
-    hGe_CFdT_gammagamma = MakeTH1('D',"Germanium/Sum/Germanium_GammaGamma_CF_dT","Germanium Gamma-Gamma dT",2000,-1000,1000);
+       hGe_Energy_GainMonitor= MakeTH2('D',"Germanium/Stats/Germanium_GainMonitor","Germanium Energy-Time Matrix",1240,16600,29000,2500,0,5000,"Time (minutes)","Ge Energy (keV)");
 
-    hGe_Energy_GainMonitor= MakeTH2('D',"Germanium/Stats/Germanium_GainMonitor","Germanium Energy-Time Matrix",1240,16600,29000,2500,0,5000,"Time (minutes)","Ge Energy (keV)");
+      for (int i=0; i<Germanium_MAX_DETS; i++)
+      {
+        for (int j = 0; j < Germanium_CRYSTALS; j++)
+        {
+          hGe_Chan_E[i][j] = MakeTH1('D',Form("Germanium/Energy_Ch_1keV/Germanium_E_Det_%1d_%1d",i, j), Form("Germanium Channel Energy Detector %1d Crystal %1d",i, j),5000,0,5000);
 
-    for (int i=0; i<Germanium_MAX_DETS; i++){
-        for (int j = 0; j < Germanium_CRYSTALS; j++){
+          ///I moved this back to unpack proc
+        //  hGe_ERaw[i][j]= MakeTH1('D',Form("Germanium/Raw/Germanium_ERaw_Det_%1d_%1d",i, j), Form("Germanium Channel Energy Detector %1d Crystal %1d",i, j),20000,0,10000);
 
-            hGe_Chan_E[i][j] = MakeTH1('D',Form("Germanium/Energy_Ch_1keV/Germanium_E_Det_%1d_%1d",i, j), Form("Germanium Channel Energy Detector %1d Crystal %1d",i, j),5000,0,5000);
+          hGe_Chan_E_halfkev[i][j] = MakeTH1('D',Form("Germanium/Energy_Ch_0_5keV/Germanium_E_0_5keV_Det_%1d_%1d",i, j), Form("Germanium Channel 0.5keV Energy Detector %1d Crystal %1d",i, j),10000,0,5000);
 
-            hGe_ERaw[i][j]= MakeTH1('D',Form("Germanium/Raw/Germanium_ERaw_Det_%1d_%1d",i, j), Form("Germanium Channel Energy Detector %1d Crystal %1d",i, j),20000,0,10000);
+          hGe_Chan_Time_Diff[i][j] = MakeTH1('D',Form("Germanium/Time_diff/Germanium_Chan_Time_Diff_Det_%1d_Chan_%1d",i,j), Form("Germanium Channel Time Difference for Detector %1d Channel %1d",i,j),200,-1000,1000);
 
-            hGe_Chan_E_halfkev[i][j] = MakeTH1('D',Form("Germanium/Energy_Ch_0_5keV/Germanium_E_0_5keV_Det_%1d_%1d",i, j), Form("Germanium Channel 0.5keV Energy Detector %1d Crystal %1d",i, j),10000,0,5000);
+          hGe_Chan_Time_Diff_CF[i][j] = MakeTH1('D',Form("Germanium/Time_diff_CF/Germanium_Chan_Time_CF_Diff_Det_%1d_Chan_%1d",i,j), Form("Germanium Channel Time Difference with Const Frac for Detector %1d Channel %1d",i,j),2000,-1000,1000);
 
-            hGe_Chan_Time_Diff[i][j] = MakeTH1('D',Form("Germanium/Time_diff/Germanium_Chan_Time_Diff_Det_%1d_Chan_%1d",i,j), Form("Germanium Channel Time Difference for Detector %1d Channel %1d",i,j),200,-1000,1000);
-
-            hGe_Chan_Time_Diff_CF[i][j] = MakeTH1('D',Form("Germanium/Time_diff_CF/Germanium_Chan_Time_CF_Diff_Det_%1d_Chan_%1d",i,j), Form("Germanium Channel Time Difference with Const Frac for Detector %1d Channel %1d",i,j),2000,-1000,1000);
 
         }
-        //  hGe_FatdT[j] = MakeTH1('I',Form("Correlations/Fatima_Geilieo/Fat_GAldT%2d",j),Form("Germanium Fatima dT Ch. %2d",j),2000,-1000,1000);
-        // hGe_Chan_E2[j] = MakeTH1('D',Form("Germanium/Germanium_Energy2/Germanium_E2%2d",j), Form("Germanium Channel Energy Channel %2d",j),5000,0,5000);
+      //  hGe_FatdT[j] = MakeTH1('I',Form("Correlations/Fatima_Geilieo/Fat_GAldT%2d",j),Form("Germanium Fatima dT Ch. %2d",j),2000,-1000,1000);
+       // hGe_Chan_E2[j] = MakeTH1('D',Form("Germanium/Germanium_Energy2/Germanium_E2%2d",j), Form("Germanium Channel Energy Channel %2d",j),5000,0,5000);
         //hGe_Chan_Egate[j] = MakeTH1('D',Form("Germanium/gated energy/Germanium_Egate%2d",j), Form("Germanium Channel Energy Channel %2d",j),5000,0,5000);
-    }
-    //for (int k=0; k<32; k++){
+        }
+      //for (int k=0; k<32; k++){
+
+
+
+
         //hGe_Chan_Timedifference_new[k] = MakeTH1('D',Form("Germanium/Timediff_new/Germanium_Chan_T_Diff%2d",k), Form("Germanium Channel T Difference for %2d",k),2000,-1000,1000);
-        // hGe_Time_Diff_vs_Energy[k] = MakeTH2('D',Form("Germanium/Germanium_dT_vs_Energy_Spectra/Germanium_dT_vs_E%2d",k), Form("Germanium Time Difference Vs Channel Energy Channel %2d",k),5000,0,5000,100,-1000,1000);
-    //}
-} // end of Make_Germanium_Histos
-
-///-----------------------------------------------------------------------------------------------------------------------------------------------------------------------///
-void EventAnlProc::Process_Germanium_Histos(EventAnlStore* pOutput){
-    Ge_time_mins=0;
-    if(Ge_WR>0) Ge_time_mins =(Ge_WR/60E9)-26900000;
-    pOutput->pGe_WR=Ge_WR;
-    Gam_mult=0;
-    dT_Ge=0;
-    //         timeFIRST_Ge=0;
-
-    dT_Addback=0;
-    dT_Ge_cfd=0;
-    // Process hits once
-
-    for (int i=0; i<GeFired; i++){
-        int det = GeDet[i];
-        int crys = GeCrys[i];
-
-        pOutput->pGePileUp[i]=GePileUp[i];
-        pOutput->pGeOverFlow[i]=GeOverFlow[i];
-        // Skip pileup/overflow events
-        if (GePileUp[i] && (det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi && det!=Germanium_TimeMachine_Det)){
-            hGe_ESum_largerange_PU->Fill(GeE_Cal[i]);
-            continue;
+       // hGe_Time_Diff_vs_Energy[k] = MakeTH2('D',Form("Germanium/Germanium_dT_vs_Energy_Spectra/Germanium_dT_vs_E%2d",k), Form("Germanium Time Difference Vs Channel Energy Channel %2d",k),5000,0,5000,100,-1000,1000);
+      //}
         }
+    ///-----------------------------------------------------------------------------------------------------------------------------------------------------------------------///
+    void EventAnlProc::Process_Germanium_Histos(EventAnlStore* pOutput)
+    {
+        Ge_time_mins=0;
+      if(Ge_WR>0) Ge_time_mins =(Ge_WR/60E9)-26900000;
 
-        if (GeOverFlow[i]&& (det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi && det!=Germanium_TimeMachine_Det)){
-            hGe_ESum_largerange_OF->Fill(GeE_Cal[i]);
-            continue;
-        }
-
-	    if(det>-1){
-            pOutput->pGe_Event_T[det][crys] = GeEventT[i];
-
-            pOutput->pGe_T[det][crys] = Ge_Talign[i];
-
-            pOutput->pGe_CF_T[det][crys] = Ge_cfd_Talign[i];
-            pOutput->pGe_E[det][crys] = GeE_Cal[i];
-            pOutput->pGe_E_Raw[det][crys] = GeE[i];
-
-            hGe_ERaw[det][crys]->Fill(GeE[i]);
+        pOutput->pGe_WR=Ge_WR;
+        Gam_mult=0;
+        dT_Ge=0;
+//         timeFIRST_Ge=0;
 
 
-            if(det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi && det!=Germanium_TimeMachine_Det){
-                hGe_ESum->Fill(GeE_Cal[i]);
+        dT_Addback=0;
+        dT_Ge_cfd=0;
+        // Process hits once
 
-                hGe_Hit_Pat->Fill(det * Germanium_CRYSTALS + crys);
+        for (int i = 0; i < GeFired; i++)
+        {
+              int det = GeDet[i];
+              int crys = GeCrys[i];
 
-                hGe_ESum_halfkev->Fill(GeE_Cal[i]);
-                //            cout<<"det " << det <<endl;
-                hGe_Chan_E_vsDet->Fill(det,GeE_Cal[i]);
-
-
-                if(Ge_time_mins>0 && GeE_Cal[i]>0)  hGe_Energy_GainMonitor->Fill(Ge_time_mins,GeE_Cal[i]);
-
-                hGe_Chan_E[det][crys]->Fill(GeE_Cal[i]);
-                hGe_Chan_E_halfkev[det][crys]->Fill(GeE_Cal[i]);
-
-                //cout<<"2GeE_Cal[i] " << GeE_Cal[i] <<" det " << det << " crys " << crys <<endl;
+              pOutput->pGePileUp[i]=GePileUp[i];
+              pOutput->pGeOverFlow[i]=GeOverFlow[i];
+           // Skip pileup/overflow events
+           if (GePileUp[i] && (det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi && det!=Germanium_TimeMachine_Det))
+           {
+              hGe_ESum_largerange_PU->Fill(GeE_Cal[i]);
+              continue;
 
             }
-            // Cross correlations
-            if (det!=Germanium_TimeMachine_Det&& det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi){
-                Gam_mult++;
 
-                //Time alignment (detector vs all)
+           if (GeOverFlow[i]&& (det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi && det!=Germanium_TimeMachine_Det))
+           {
+             hGe_ESum_largerange_OF->Fill(GeE_Cal[i]);
+             continue;
+            }
 
-                //Aligned dT
-                //         if(det!=0 && crys!=1){
-                //             if(RefTGe!=0){
-                //                    dT_Align= Ge_Talign[i]-RefTGe;
-                //                    hGe_dTgammagamma->Fill(dT_Align);
-                //                    hGe_Chan_Time_Diff[det][crys]->Fill(dT_Align);
-                //
-                // //                    cout<<"2event " << event_number <<" det " << det << " crys " << crys << " dT_Align " << dT_Align <<" Ge_Talign[i] " << Ge_Talign[i] << " RefTGe " << R/*efTGe << " i " << i << endl;
-                //             }
-                /*        ///Constant fraction time testing 03.02.21
-                if(RefCFDGe!=0){
-                    //CFD Time alignment
+	   if(det>-1){
+           pOutput->pGe_Event_T[det][crys] = GeEventT[i];
 
-                    //Aligned CFD dT
-                    dT_CFD_Align= Ge_cfd_Talign[i]-RefCFDGe;
-                    hGe_CFdT_gammagamma->Fill(dT_CFD_Align);
-                    hGe_Chan_Time_Diff_CF[det][crys]->Fill(dT_CFD_Align);
-                }
-                }*/
+           pOutput->pGe_T[det][crys] = Ge_Talign[i];
+
+           pOutput->pGe_CF_T[det][crys] = Ge_cfd_Talign[i];
+           pOutput->pGe_E[det][crys] = GeE_Cal[i];
+           pOutput->pGe_E_Raw[det][crys] = GeE[i];
+
+          // hGe_ERaw[det][crys]->Fill(GeE[i]);
 
 
+           if(det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi && det!=Germanium_TimeMachine_Det){
+           hGe_ESum->Fill(GeE_Cal[i]);
 
-                for (int j = 0; j < GeFired; j++){
+             hGe_Hit_Pat->Fill(det * Germanium_CRYSTALS + crys);
 
-                    if (i == j) continue;
+           hGe_ESum_halfkev->Fill(GeE_Cal[i]);
+//            cout<<"det " << det <<endl;
+            hGe_Chan_E_vsDet->Fill(det,GeE_Cal[i]);
 
-                    if(GeE_Cal[i]>0 && GeE_Cal[j]>0){
-                        //dT Germanium raw
-                        //dT_Ge= GeT[i]-GeT[j];
-                        dT_Align= Ge_Talign[i]-Ge_Talign[j];
-                        hGe_Chan_Time_Diff[det][crys]->Fill(dT_Align);
 
-                        dT_CFD_Align= Ge_cfd_Talign[i]-Ge_cfd_Talign[j];
+            if(Ge_time_mins>0 && GeE_Cal[i]>0)  hGe_Energy_GainMonitor->Fill(Ge_time_mins,GeE_Cal[i]);
+
+
+
+           hGe_Chan_E[det][crys]->Fill(GeE_Cal[i]);
+           hGe_Chan_E_halfkev[det][crys]->Fill(GeE_Cal[i]);
+
+     //cout<<"2GeE_Cal[i] " << GeE_Cal[i] <<" det " << det << " crys " << crys <<endl;
+
+           }
+           // Cross correlations
+    if ( det!=Germanium_TimeMachine_Det&& det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi){
+        Gam_mult++;
+
+         //Time alignment (detector vs all)
+
+                 //Aligned dT
+//         if(det!=0 && crys!=1){
+//             if(RefTGe!=0){
+//                    dT_Align= Ge_Talign[i]-RefTGe;
+//                    hGe_dTgammagamma->Fill(dT_Align);
+//                    hGe_Chan_Time_Diff[det][crys]->Fill(dT_Align);
+//
+// //                    cout<<"2event " << event_number <<" det " << det << " crys " << crys << " dT_Align " << dT_Align <<" Ge_Talign[i] " << Ge_Talign[i] << " RefTGe " << R/*efTGe << " i " << i << endl;
+//             }
+            /*        ///Constant fraction time testing 03.02.21
+                    if(RefCFDGe!=0){
+                        //CFD Time alignment
+
+                        //Aligned CFD dT
+                        dT_CFD_Align= Ge_cfd_Talign[i]-RefCFDGe;
+                        hGe_CFdT_gammagamma->Fill(dT_CFD_Align);
                         hGe_Chan_Time_Diff_CF[det][crys]->Fill(dT_CFD_Align);
+                    }
+        }*/
 
-                        hGe_Mult->Fill(Gam_mult);
 
-                        hGe_MultvsdT->Fill(Gam_mult,dT_CFD_Align);
 
-                        ///Gamma-Gamma Time gate
-                        if((dT_CFD_Align)>fCorrel->GGe1_Ge2_Low && (dT_CFD_Align)< fCorrel->GGe1_Ge2_High && det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi ){
-                            hGe_Chan_E_Mat->Fill(GeE_Cal[i], GeE_Cal[j]);
+           for (int j = 0; j < GeFired; j++)
+           {
+              if (i == j) continue;
+
+              if(GeE_Cal[i]>0 && GeE_Cal[j]>0){
+                  //dT Germanium raw
+                  //dT_Ge= GeT[i]-GeT[j];
+                    dT_Align= Ge_Talign[i]-Ge_Talign[j];
+                  hGe_Chan_Time_Diff[det][crys]->Fill(dT_Align);
+
+                   dT_CFD_Align= Ge_cfd_Talign[i]-Ge_cfd_Talign[j];
+                   hGe_Chan_Time_Diff_CF[det][crys]->Fill(dT_CFD_Align);
+
+
+              hGe_Mult->Fill(Gam_mult);
+
+
+              hGe_MultvsdT->Fill(Gam_mult,dT_CFD_Align);
+
+
+
+              ///Gamma-Gamma Time gate
+              if((dT_CFD_Align)>fCorrel->GGe1_Ge2_Low && (dT_CFD_Align)< fCorrel->GGe1_Ge2_High && det!=Germanium_SC41_Det  && det!=Germanium_SC41_Det_Digi ){
+              hGe_Chan_E_Mat->Fill(GeE_Cal[i], GeE_Cal[j]);
                         }
                     }
                 }
             }
-        }
+       }
     }
 
 
-    ///ADDBACK
-    static const long dT_addback = 100;
-    static const double energy_thres_addback = 100;
+       ////ADDBACK
+        static const long dT_addback = 100;
+        static const double energy_thres_addback = 100;
 
-    // Detector addback
-    for (int i = 0; i < Germanium_MAX_DETS; i++){
-        double E[Germanium_CRYSTALS] = { 0 };
-        long T[Germanium_CRYSTALS] = { 0 };
-        int n[Germanium_CRYSTALS] = { 0 };
-        int crys[Germanium_CRYSTALS] = { 0 };
-        int v = 0;
-        for (int j=0; j<Germanium_CRYSTALS; j++){
-            if (pOutput->pGe_E[i][j] == 0) continue;
-            bool added = false;
+        // Detector addback
+        for (int i = 0; i < Germanium_MAX_DETS; i++)
+        {
+            double E[Germanium_CRYSTALS] = { 0 };
+            long T[Germanium_CRYSTALS] = { 0 };
+            int n[Germanium_CRYSTALS] = { 0 };
+            int crys[Germanium_CRYSTALS] = { 0 };
+            int v = 0;
+            for (int j = 0; j < Germanium_CRYSTALS; j++)
+                {
+              if (pOutput->pGe_E[i][j] == 0) continue;
+              bool added = false;
 
-            // Try to addback to an existing hit
-            for (int k = 0; k < v; k++){
-                dT_Addback=T[k] - pOutput->pGe_T[i][j];
-                hGe_dTaddback->Fill(dT_Addback);
-                if (T[k] - pOutput->pGe_T[i][j] < dT_addback){
-                    hGe_dTaddback->Fill(T[k] - pOutput->pGe_T[i][j]);
-                    if(pOutput->pGe_E[i][j]>energy_thres_addback){
+              // Try to addback to an existing hit
+              for (int k = 0; k < v; k++)
+              {
+                  dT_Addback=T[k] - pOutput->pGe_T[i][j];
+                  hGe_dTaddback->Fill(dT_Addback);
+        if (T[k] - pOutput->pGe_T[i][j] < dT_addback){
+             hGe_dTaddback->Fill(T[k] - pOutput->pGe_T[i][j]);
+            if(pOutput->pGe_E[i][j]>energy_thres_addback){
 
-                        E[k] += pOutput->pGe_E[i][j];
-                        T[k] = (T[k] + pOutput->pGe_T[i][j]) / (n[k] + 1);
-                        n[k] += 1;
-                        added = true;
+                  E[k] += pOutput->pGe_E[i][j];
+                  T[k] = (T[k] + pOutput->pGe_T[i][j]) / (n[k] + 1);
+                  n[k] += 1;
+                  added = true;
                     }
                 }
-            }
+              }
 
-            // Add to a new hit
-            if (!added){
+              // Add to a new hit
+              if (!added)
+              {
                 T[v] = pOutput->pGe_T[i][j];
                 E[v] = pOutput->pGe_E[i][j];
                 crys[v] = j;
                 n[v] = 1;
                 v++;
+              }
             }
-        }
+            // Fill and write to Tree the addback energies
+            for (int j = 0; j < v; j++)
+            {
 
-        // Fill and write to Tree the addback energies
-        for (int j=0; j<v; j++){
+                pOutput->pGe_EAddback[i][crys[j]] = E[j];
+                pOutput->pGe_T[i][crys[j]] = T[j];
 
-            pOutput->pGe_EAddback[i][crys[j]] = E[j];
-            pOutput->pGe_T[i][crys[j]] = T[j];
+              ///  SCI41 Signals
+               if(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41L_Crystal]>0) hGe_SC41L->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41L_Crystal]);
 
-            //  SCI41 Signals
-            if(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41L_Crystal]>0) hGe_SC41L->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41L_Crystal]);
+               if(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41R_Crystal]>0) hGe_SC41R->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41R_Crystal]);
 
-            if(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41R_Crystal]>0) hGe_SC41R->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det][Germanium_SC41R_Crystal]);
+               if(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41R_Crystal_Digi]>0) hGe_SC41R_digi->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41R_Crystal_Digi]);
 
-            if(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41R_Crystal_Digi]>0) hGe_SC41R_digi->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41R_Crystal_Digi]);
+               if(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41L_Crystal_Digi]>0) hGe_SC41L_digi->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41L_Crystal_Digi]);
 
-            if(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41L_Crystal_Digi]>0) hGe_SC41L_digi->Fill(pOutput->pGe_EAddback[Germanium_SC41_Det_Digi][Germanium_SC41L_Crystal_Digi]);
 
-            if(GePileUp[i]==0 && GeOverFlow[i]==0 ){
+                 if(GePileUp[i]==0 && GeOverFlow[i]==0 ){
 
-                if(i!=Germanium_SC41_Det && i!=Germanium_SC41_Det_Digi && i!=Germanium_TimeMachine_Det)   {
-                    hGe_AddbackSum->Fill(E[j]);
-                    hGe_AddbackSum_halfkev->Fill(E[j]);
+            if(i!=Germanium_SC41_Det && i!=Germanium_SC41_Det_Digi && i!=Germanium_TimeMachine_Det)   {
+                hGe_AddbackSum->Fill(E[j]);
+                hGe_AddbackSum_halfkev->Fill(E[j]);
+                    }
                 }
             }
         }
-    }
-}//end of Process_Germanium_Histos()
+    }//end of Process_Germanium_Histos()
 
 //--------------------------------------------------------------------------------------------------------------------//
 // TH1I* EventAnlProc::MakeH1I(const char* fname,
@@ -3581,6 +3637,8 @@ void EventAnlProc::Fat_TimeCorrection(EventUnpackStore* pInput){
         }
      }
 }
+
+
 
 
 //-----------------------------------------------------------------------------------------------------------------------------//

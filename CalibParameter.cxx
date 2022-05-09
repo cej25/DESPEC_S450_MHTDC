@@ -194,7 +194,7 @@ CalibParameter::CalibParameter(const Text_t *name)
     for (i = 0; i < Germanium_MAX_CHANNELS; i++){
       if(IsData(file)) file >> DetIDGe_cfdalign >>Ge_cfd_align_par[i] ;
 
-       if (file.fail()) cout << "ERROR reading Germanium_CFD_TimeAlignment.txt\n";
+       if (file.fail()) cout << "ERROR reading Germanium_CFD_TimeAlignment.txt: i "<< i << endl;
     }
   }
   file.close();

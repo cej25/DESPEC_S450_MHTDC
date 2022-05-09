@@ -10,7 +10,7 @@ using namespace std;
     Raw_Event::Raw_Event(){
 
 
-    Event_Type = -1;
+  //  Event_Type = -1;
 
 //     PLASTIC_Data.PADI_OR_PADIWA = PADI_OR_PADIWA;
 
@@ -425,18 +425,18 @@ for(int i=0; i<10; i++){
 // }
 
 
-
+/*
 int Raw_Event::get_Event_type(){
     return Event_Type;
 
-}
+}*/
 
 
 // void Raw_Event::set_AIDA_Event(){}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //--------------------------------------AIDA  ------------------------------------------------//
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
- void Raw_Event::set_DATA_AIDA(double* Aida_E, int* Aida_feeID, int* Aida_ChID, ULong64_t* Aida_WR, int Aida_hits, bool* Aida_veto, int* Aida_side, int* Aida_strip, int* Aida_EvtID, ULong64_t* Aida_Fast, int* Aida_ADC, std::vector<AidaScaler> const& scaler){
+ void Raw_Event::set_DATA_AIDA(double* Aida_E, int* Aida_feeID, int* Aida_ChID, ULong64_t* Aida_WR, int Aida_hits, bool* Aida_veto, int* Aida_side, int* Aida_strip, int* Aida_EvtID, ULong64_t* Aida_Fast, int* Aida_ADC, std::vector<AidaScaler> const& scaler, std::vector<AidaPauseResume> const& pr){
 
     this->  AIDA_Hits = Aida_hits;
     for (int i =0; i< Aida_hits; i++){
@@ -455,8 +455,9 @@ int Raw_Event::get_Event_type(){
         this->AIDA_ADC[i] = Aida_ADC[i];
 
        }
-   Event_Type = 1;
+  // Event_Type = 1;
    AIDA_SCALERS = scaler;
+   AIDA_PAUSERESUME = pr;
  }
 
 
@@ -512,7 +513,7 @@ void Raw_Event::set_DATA_FINGER(int* it,double** Edge_Coarse,double** Edge_fine,
         }
     }
 
-    Event_Type = 2;
+   // Event_Type = 2;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //---------------------------------------PLASTIC VME  ------------------------------------------------//
@@ -553,9 +554,9 @@ void Raw_Event::set_DATA_FINGER(int* it,double** Edge_Coarse,double** Edge_fine,
         }*/
 //---------------------------------------------------------------
 
-bool Raw_Event::PLASTIC_CheckVME(){
-    return VME_Event;
-}
+// bool Raw_Event::PLASTIC_CheckVME(){
+//     return VME_Event;
+// }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //--------------------------------------PLASTIC TAMEX  ------------------------------------------------//
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -613,7 +614,7 @@ void Raw_Event::set_DATA_PLASTIC_TAMEX(int* it_bPlas,double** Edge_Coarse_bPlas,
         }
     }
 
-    Event_Type = 2;
+   // Event_Type = 2;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -675,7 +676,7 @@ void Raw_Event::set_DATA_PLASTIC_TWINPEAKS(int* it_bPlastTwinPeaks,double** Edge
         }
     }
 
-    Event_Type = 2;
+   // Event_Type = 2;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //--------------------------------------FATIMA VME  ------------------------------------------------//
@@ -726,7 +727,7 @@ void Raw_Event::set_DATA_FATIMA(int QDC_FIRED,int TDC_FIRED,
      tdc_dets_fired++;
 
     }
-       Event_Type = 3;
+   //    Event_Type = 3;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------------------------------- SCALERS  ------------------------------------------------//
@@ -891,16 +892,16 @@ void Raw_Event::set_DATA_FATIMA_TAMEX(int* it_fat,double** Edge_Coarse_fat,doubl
         }
     }
 
-    Event_Type = 3;
+ //   Event_Type = 3;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------------------------------- Germanium FEBEX  ------------------------------------------------//
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Raw_Event::set_DATA_Germanium(int Ge_FIRED,ULong64_t* sum_time,int* hit_pattern,ULong64_t* chan_time,double* chan_en, int* det_ids, int* crystal_ids, bool* pileup, bool* overflow,ULong64_t* chan_cf){
-        this->Ge_FIRED = Ge_FIRED;
+void Raw_Event::set_DATA_Germanium(int Ge_hits,ULong64_t* sum_time,int* hit_pattern,ULong64_t* chan_time,double* chan_en, int* det_ids, int* crystal_ids, bool* pileup, bool* overflow,ULong64_t* chan_cf){
+        this->Ge_hits = Ge_hits;
 
-        for(int i = 0;i < Ge_FIRED;++i){
+        for(int i = 0;i < Ge_hits;++i){
 
         Germanium_Det_Nums[i] = det_ids[i];
         Germanium_Crystal_Nums[i] = crystal_ids[i];
@@ -914,8 +915,20 @@ void Raw_Event::set_DATA_Germanium(int Ge_FIRED,ULong64_t* sum_time,int* hit_pat
 
     }
 
-    Event_Type = 4;
+  //  Event_Type = 4;
 }
+
+void Raw_Event::set_DATA_Germanium_Traces(int ge_trace_fired, int ge_trace_length, int** ge_trace_first, int** ge_trace_second){
+        Ge_Tr_Length = ge_trace_length;
+        
+        for(int i=0; i<ge_trace_fired;i++){
+            for(int j=0; j<Ge_Tr_Length/2; j++){
+                Ge_Tr_First[i][j] = ge_trace_first[i][j];
+                Ge_Tr_Second[i][j] = ge_trace_second[i][j];
+                }
+            }
+        }
+    
 //TEMPORARY GETTERS FOR FRS, FATIMA, PLASTIC, and Germanium
 
 // #############################################################
@@ -1399,7 +1412,7 @@ PLASTIC_DataStruct* Raw_Event::PassPLASTIC(){ return &PLASTIC_Data;}*/
 //------------------------------------------ Germanium FEBEX ------------------------------------------//
 
 
-    int Raw_Event::get_Germanium_am_Fired(){return Ge_FIRED;}
+    int Raw_Event::get_Germanium_am_Fired(){return Ge_hits;}
 
     ULong64_t Raw_Event::get_Germanium_Event_T(int i){return Germanium_sum_time[i];}
 
@@ -1419,6 +1432,9 @@ PLASTIC_DataStruct* Raw_Event::PassPLASTIC(){ return &PLASTIC_Data;}*/
 
     ULong64_t Raw_Event::get_Germanium_Channel_cf(int i){return Germanium_chan_cf[i];}
     
+    int Raw_Event::get_Germanium_Trace_Length(){return Ge_Tr_Length;}
+    int Raw_Event::get_Germanium_Trace_First(int i,int j){return Ge_Tr_First[i][j];}
+    int Raw_Event::get_Germanium_Trace_Second(int i, int j){return Ge_Tr_Second[i][j];}
   //------------------------------------------ Beam Monitor ------------------------------------------//
     Long64_t Raw_Event::get_BM_LDiff_S2(int i){return L_diff_S2[i];}
     

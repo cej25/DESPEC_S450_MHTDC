@@ -1,5 +1,0 @@
-/lustre/gamma/dryrun_2022/degas_notraces_test1__0001.lmd
-/lustre/gamma/dryrun_2022/degas_notraces_test1__0002.lmd
-/lustre/gamma/dryrun_2022/degas_notraces_test1__0003.lmd
-/lustre/gamma/dryrun_2022/degas_notraces_test1__0004.lmd
-/lustre/gamma/dryrun_2022/degas_notraces_test1__0005.lmd
