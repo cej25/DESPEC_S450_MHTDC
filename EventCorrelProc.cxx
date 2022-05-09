@@ -807,7 +807,7 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
      // C.E.J.
      // --- MHTDC Histograms --- //
 
-     for (int i=0; i<10; i++) {
+     for (int i=0; i<MAX_MHTDC_HITS; i++) {
 
          hA_FRS_ZAoQ_GeEvsT_all_mhtdc[i] = MakeTH2('D',"Correlations/MHTDC/FRS-Prompt_Ge/Z1vsAoQ_Ge/GeE_vs_FRSGe_dT_Z1vsAoQ_mhtdc_All","Ge (mhtdc) vs T all",2100,-1000,20000,fCorrel->GGe1_Ge2_HistoBin,fCorrel->GGe1_Ge2_HistoMin,fCorrel->GGe1_Ge2_HistoMax,"Ge Energy (keV) (mhtdc)", "FRS - Ge time (ns)");
 
@@ -1050,7 +1050,7 @@ Bool_t EventCorrelProc::BuildEvent(TGo4EventElement* dest){
     // C.E.J.
     // ---------- MHTDC PIDs ------------------------------------------//
 
-    for (int i=0; i<10; i++) {
+    for (int i=0; i<MAX_MHTDC_HITS; i++) {
 
         for(int g=0; g<Germanium_MAX_DETS; g++){
 

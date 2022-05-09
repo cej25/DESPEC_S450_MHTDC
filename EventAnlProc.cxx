@@ -1360,11 +1360,9 @@ void EventAnlProc::Process_FRS_Histos(EventUnpackStore* pInput, EventAnlStore* p
         }
     }
 
-
-    // C.E.J.
     //-------------------------- FRS MHTDC Histograms and PID Gates ---------------------//
     /// Loop on MHTDC arrays
-    for (int i=0; i<10; i++) {
+    for (int i=0; i<MAX_MHTDC_HITS; i++) {
         ///Z1 vs Time
         if(FRS_z_mhtdc[i]>0 && FRS_time_mins>0) hID_Z_mhtdc_T->Fill(FRS_time_mins, FRS_z_mhtdc[i]);
 
@@ -1417,7 +1415,7 @@ void EventAnlProc::Process_FRS_Histos(EventUnpackStore* pInput, EventAnlStore* p
     ///MHTDC PID gates
     for(int g=0; g<MAX_FRS_GATE; g++){
         //GATE: AoQ vs Z
-        for (int i=0; i<10; i++){
+        for (int i=0; i<MAX_MHTDC_HITS; i++){
             if(cID_Z_AoQ_mhtdc[g]->Test(FRS_AoQ_mhtdc[i], FRS_z_mhtdc[i])==true){
                 pOutput->pFRS_ZAoQ_pass_mhtdc[i][g] = true;
 
